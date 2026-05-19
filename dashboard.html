@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MemoryLab — Clinician Dashboard</title>
+<style>
+  :root {
+    --red: #BE0A1E;
+    --navy: #1A2340;
+    --navy-soft: #2C3658;
+    --bg: #F4F5F7;
+    --card: #FFFFFF;
+    --border: #E2E4E9;
+    --text: #1F2433;
+    --text-soft: #6B7080;
+    --text-faint: #9499A6;
+    --accent-soft: #FBEBED;
+    --good: #3B7D6E;
+    --watch: #C77B30;
+    --shadow: 0 1px 3px rgba(26,35,64,0.06), 0 1px 2px rgba(26,35,64,0.04);
+    --shadow-hover: 0 4px 16px rgba(26,35,64,0.10);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', 'Helvetica Neue', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ─── Top Navigation ─────────────────────────────────────── */
+  .topbar {
+    background: var(--navy);
+    color: #fff;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    padding: 0 28px;
+    gap: 32px;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 0.2px;
+  }
+  .logo-mark {
+    width: 24px; height: 24px;
+    background: var(--red);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 800;
+  }
+  .logo span { color: #B9BECE; font-weight: 400; }
+  .nav { display: flex; gap: 4px; margin-left: 12px; }
+  .nav a {
+    color: #B9BECE;
+    text-decoration: none;
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    transition: background 0.15s, color 0.15s;
+  }
+  .nav a:hover { color: #fff; background: var(--navy-soft); }
+  .nav a.active { color: #fff; background: var(--navy-soft); font-weight: 600; }
+  .topbar-right {
+    margin-left: auto;
+    display: flex; align-items: center; gap: 18px;
+  }
+  .clinician-badge {
+    display: flex; align-items: center; gap: 9px;
+    font-size: 13px;
+  }
+  .avatar {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: var(--red);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 12px;
+  }
+  .clinician-badge .meta { line-height: 1.25; }
+  .clinician-badge .meta .name { font-weight: 600; }
+  .clinician-badge .meta .role { color: #B9BECE; font-size: 11.5px; }
+
+  /* ─── Layout ─────────────────────────────────────────────── */
+  .page {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 28px;
+  }
+  .page-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 22px;
+  }
+  .page-head h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--navy);
+    letter-spacing: -0.2px;
+  }
+  .page-head .date {
+    color: var(--text-soft);
+    font-size: 13px;
+    margin-top: 2px;
+  }
+  .btn-primary {
+    background: var(--red);
+    color: #fff;
+    border: none;
+    padding: 9px 18px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 7px;
+    transition: background 0.15s;
+  }
+  .btn-primary:hover { background: #A50918; }
+
+  /* ─── Summary Strip ──────────────────────────────────────── */
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .stat {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+  }
+  .stat::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+  }
+  .stat.s-total::before { background: var(--navy); }
+  .stat.s-week::before  { background: var(--good); }
+  .stat.s-flag::before  { background: var(--red); }
+  .stat .label {
+    font-size: 12px;
+    color: var(--text-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+  .stat .value {
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--navy);
+    margin-top: 6px;
+    line-height: 1;
+  }
+  .stat .sub {
+    font-size: 12px;
+    color: var(--text-faint);
+    margin-top: 6px;
+  }
+  .stat.s-flag .value { color: var(--red); }
+
+  /* ─── Main grid layout ───────────────────────────────────── */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 24px;
+    align-items: start;
+  }
+
+  /* ─── Patient panel ──────────────────────────────────────── */
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+  }
+  .panel-head {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .panel-head h2 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--navy);
+  }
+  .filters {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .filter-chip {
+    font-size: 12px;
+    padding: 5px 11px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--text-soft);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .filter-chip:hover { border-color: var(--text-faint); }
+  .filter-chip.active {
+    background: var(--navy);
+    color: #fff;
+    border-color: var(--navy);
+    font-weight: 600;
+  }
+
+  /* ─── Patient grid ───────────────────────────────────────── */
+  .patient-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    padding: 18px 20px;
+  }
+  .patient-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 15px 16px;
+    cursor: pointer;
+    transition: box-shadow 0.18s, transform 0.18s, border-color 0.18s;
+    background: #fff;
+    position: relative;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+  }
+  .patient-card:hover {
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-2px);
+    border-color: #D5D8E0;
+  }
+  .pc-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 14px;
+  }
+  .pc-name {
+    font-size: 14.5px;
+    font-weight: 700;
+    color: var(--navy);
+  }
+  .pc-sub {
+    font-size: 12px;
+    color: var(--text-faint);
+    margin-top: 1px;
+  }
+  .pc-badges { display: flex; flex-direction: column; gap: 5px; align-items: flex-end; }
+  .badge {
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 5px;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+  }
+  .badge.due {
+    background: var(--accent-soft);
+    color: var(--red);
+  }
+  .badge.quality {
+    background: #FBF1E3;
+    color: var(--watch);
+  }
+
+  /* score row */
+  .pc-score { margin-bottom: 4px; }
+  .pc-score-label {
+    font-size: 11.5px;
+    color: var(--text-soft);
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .pc-score-label b { color: var(--navy); font-size: 12.5px; }
+  /* normative bar */
+  .normbar {
+    height: 8px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #E4E7EC 0%, #E4E7EC 100%);
+    position: relative;
+  }
+  .normbar .typical {
+    position: absolute;
+    top: 0; bottom: 0;
+    background: #D9DEE6;
+    border-radius: 4px;
+  }
+  .normbar .marker {
+    position: absolute;
+    top: -3px;
+    width: 4px; height: 14px;
+    background: var(--navy);
+    border-radius: 2px;
+    transform: translateX(-50%);
+  }
+  .normbar .marker.elevated { background: var(--red); }
+  .pc-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 13px;
+    padding-top: 11px;
+    border-top: 1px solid #EEF0F3;
+  }
+  .pc-last {
+    font-size: 11.5px;
+    color: var(--text-faint);
+  }
+  .trend {
+    font-size: 11.5px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .trend.stable { color: var(--good); }
+  .trend.declining { color: var(--red); }
+  .trend.improving { color: var(--good); }
+  .trend.new { color: var(--text-faint); }
+  .trend .arrow { font-size: 13px; }
+
+  /* ─── Right column ───────────────────────────────────────── */
+  .side-col { display: flex; flex-direction: column; gap: 20px; }
+  .side-panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+  }
+  .side-panel .panel-head { padding: 14px 18px; }
+  .side-panel .panel-head h2 { font-size: 14px; }
+  .schedule-list { padding: 8px 0; }
+  .schedule-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 18px;
+    transition: background 0.15s;
+    cursor: pointer;
+  }
+  .schedule-item:hover { background: #FAFAFB; }
+  .sched-date {
+    text-align: center;
+    min-width: 38px;
+  }
+  .sched-date .day {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--navy);
+    line-height: 1;
+  }
+  .sched-date .mon {
+    font-size: 10px;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .sched-info { flex: 1; min-width: 0; }
+  .sched-info .pname {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .sched-info .ptype {
+    font-size: 11.5px;
+    color: var(--text-faint);
+  }
+  .sched-status {
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 3px 7px;
+    border-radius: 4px;
+  }
+  .sched-status.confirmed { background: #EAF2F0; color: var(--good); }
+  .sched-status.pending { background: #FBF1E3; color: var(--watch); }
+  .side-panel .panel-foot {
+    padding: 12px 18px;
+    border-top: 1px solid var(--border);
+  }
+  .btn-ghost {
+    width: 100%;
+    background: #fff;
+    border: 1px solid var(--border);
+    color: var(--navy);
+    padding: 8px;
+    border-radius: 7px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-ghost:hover { background: var(--bg); border-color: var(--text-faint); }
+
+  /* reminders panel */
+  .reminder-item {
+    padding: 11px 18px;
+    border-bottom: 1px solid #EEF0F3;
+    display: flex;
+    gap: 11px;
+    align-items: flex-start;
+  }
+  .reminder-item:last-child { border-bottom: none; }
+  .rem-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--red);
+    margin-top: 5px;
+    flex-shrink: 0;
+  }
+  .rem-dot.soft { background: var(--watch); }
+  .rem-text {
+    font-size: 12.5px;
+    color: var(--text);
+    line-height: 1.45;
+  }
+  .rem-text b { color: var(--navy); }
+  .rem-time {
+    font-size: 11px;
+    color: var(--text-faint);
+    margin-top: 2px;
+  }
+
+  /* legend footnote */
+  .legend {
+    margin-top: 8px;
+    padding: 13px 20px;
+    display: flex;
+    gap: 22px;
+    flex-wrap: wrap;
+    font-size: 11.5px;
+    color: var(--text-soft);
+    border-top: 1px solid var(--border);
+  }
+  .legend .item { display: flex; align-items: center; gap: 6px; }
+  .legend .swatch {
+    width: 22px; height: 8px; border-radius: 3px;
+    position: relative;
+  }
+  .legend .swatch.typ { background: #D9DEE6; }
+  .legend .mk {
+    width: 4px; height: 14px; border-radius: 2px; background: var(--navy);
+  }
+  .legend .mk.el { background: var(--red); }
+</style>
+</head>
+<body>
+
+<!-- ─── Top Navigation ─────────────────────────────────────── -->
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-mark">M</div>
+    MemoryLab <span>&nbsp;Clinical</span>
+  </div>
+  <nav class="nav">
+    <a href="dashboard.html" class="active">Dashboard</a>
+        <a href="patient_profile.html">Patients</a>
+    <a href="schedule.html">Schedule</a>
+  </nav>
+  <div class="topbar-right">
+    <div class="clinician-badge">
+      <div class="avatar">EV</div>
+      <div class="meta">
+        <div class="name">Dr. E. Visser</div>
+        <div class="role">General Practitioner</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- ─── Page header ──────────────────────────────────────── -->
+  <div class="page-head">
+    <div>
+      <h1>Dashboard</h1>
+      <div class="date">Thursday, 14 May 2026</div>
+    </div>
+    <button class="btn-primary" onclick="window.location.href='schedule.html'">
+      <span style="font-size:15px;line-height:1;">+</span> Schedule assessment
+    </button>
+  </div>
+
+  <!-- ─── Summary strip ────────────────────────────────────── -->
+  <div class="summary">
+    <div class="stat s-total">
+      <div class="label">Active patients</div>
+      <div class="value">24</div>
+      <div class="sub">Under your care</div>
+    </div>
+    <div class="stat s-week">
+      <div class="label">Completed this week</div>
+      <div class="value">11</div>
+      <div class="sub">Sessions ready to review</div>
+    </div>
+    <div class="stat s-flag">
+      <div class="label">Flagged for review</div>
+      <div class="value">2</div>
+      <div class="sub">Declining trend or low session quality</div>
+    </div>
+  </div>
+
+  <!-- ─── Main two-column grid ─────────────────────────────── -->
+  <div class="main-grid">
+
+    <!-- LEFT: patient grid -->
+    <div class="panel">
+      <div class="panel-head">
+        <h2>My patients</h2>
+        <div class="filters">
+          <div class="filter-chip active">All</div>
+          <div class="filter-chip">Needs review</div>
+          <div class="filter-chip">Session due</div>
+        </div>
+      </div>
+
+      <div class="patient-grid">
+
+        <!-- Patient card 1 — flagged, declining -->
+        <a class="patient-card" href="patient_profile.html">
+          <div class="pc-top">
+            <div>
+              <div class="pc-name">Anna Bakker</div>
+              <div class="pc-sub">72 yrs · 14 sessions</div>
+            </div>
+            <div class="pc-badges">
+              <span class="badge quality">Check quality</span>
+            </div>
+          </div>
+          <div class="pc-score">
+            <div class="pc-score-label">
+              <span>SGMA score</span>
+              <b>53</b>
+            </div>
+            <div class="normbar">
+              <div class="typical" style="left:30%;width:40%;"></div>
+              <div class="marker elevated" style="left:16%;"></div>
+            </div>
+          </div>
+          <div class="pc-foot">
+            <span class="pc-last">Last session: 12 May</span>
+            <span class="trend declining"><span class="arrow">&#8600;</span> Declining</span>
+          </div>
+        </a>
+
+        <!-- Patient card 2 — stable -->
+        <a class="patient-card" href="patient_profile.html">
+          <div class="pc-top">
+            <div>
+              <div class="pc-name">Johan de Vries</div>
+              <div class="pc-sub">68 yrs · 9 sessions</div>
+            </div>
+            <div class="pc-badges"></div>
+          </div>
+          <div class="pc-score">
+            <div class="pc-score-label">
+              <span>SGMA score</span>
+              <b>80</b>
+            </div>
+            <div class="normbar">
+              <div class="typical" style="left:30%;width:40%;"></div>
+              <div class="marker" style="left:36%;"></div>
+            </div>
+          </div>
+          <div class="pc-foot">
+            <span class="pc-last">Last session: 13 May</span>
+            <span class="trend stable"><span class="arrow">&#8594;</span> Stable</span>
+          </div>
+        </a>
+
+        <!-- Patient card 3 — session due -->
+        <a class="patient-card" href="patient_profile.html">
+          <div class="pc-top">
+            <div>
+              <div class="pc-name">Greet Janssen</div>
+              <div class="pc-sub">79 yrs · 21 sessions</div>
+            </div>
+            <div class="pc-badges">
+              <span class="badge due">Session due</span>
+            </div>
+          </div>
+          <div class="pc-score">
+            <div class="pc-score-label">
+              <span>SGMA score</span>
+              <b>71</b>
+            </div>
+            <div class="normbar">
+              <div class="typical" style="left:30%;width:40%;"></div>
+              <div class="marker" style="left:29%;"></div>
+            </div>
+          </div>
+          <div class="pc-foot">
+            <span class="pc-last">Last session: 28 Apr</span>
+            <span class="trend stable"><span class="arrow">&#8594;</span> Stable</span>
+          </div>
+        </a>
+
+        <!-- Patient card 4 — flagged declining + due -->
+        <a class="patient-card" href="patient_profile.html">
+          <div class="pc-top">
+            <div>
+              <div class="pc-name">Pieter Mulder</div>
+              <div class="pc-sub">74 yrs · 16 sessions</div>
+            </div>
+            <div class="pc-badges">
+              <span class="badge due">Session due</span>
+            </div>
+          </div>
+          <div class="pc-score">
+            <div class="pc-score-label">
+              <span>SGMA score</span>
+              <b>57</b>
+            </div>
+            <div class="normbar">
+              <div class="typical" style="left:30%;width:40%;"></div>
+              <div class="marker elevated" style="left:19%;"></div>
+            </div>
+          </div>
+          <div class="pc-foot">
+            <span class="pc-last">Last session: 30 Apr</span>
+            <span class="trend declining"><span class="arrow">&#8600;</span> Declining</span>
+          </div>
+        </a>
+
+        <!-- Patient card 5 — new patient -->
+        <a class="patient-card" href="patient_profile.html">
+          <div class="pc-top">
+            <div>
+              <div class="pc-name">Marieke Smit</div>
+              <div class="pc-sub">66 yrs · 2 sessions</div>
+            </div>
+            <div class="pc-badges"></div>
+          </div>
+          <div class="pc-score">
+            <div class="pc-score-label">
+              <span>SGMA score</span>
+              <b>85</b>
+            </div>
+            <div class="normbar">
+              <div class="typical" style="left:30%;width:40%;"></div>
+              <div class="marker" style="left:39%;"></div>
+            </div>
+          </div>
+          <div class="pc-foot">
+            <span class="pc-last">Last session: 11 May</span>
+            <span class="trend new"><span class="arrow">&#8226;</span> New patient</span>
+          </div>
+        </a>
+
+        <!-- Patient card 6 — improving -->
+        <a class="patient-card" href="patient_profile.html">
+          <div class="pc-top">
+            <div>
+              <div class="pc-name">Henk Visser</div>
+              <div class="pc-sub">71 yrs · 12 sessions</div>
+            </div>
+            <div class="pc-badges"></div>
+          </div>
+          <div class="pc-score">
+            <div class="pc-score-label">
+              <span>SGMA score</span>
+              <b>75</b>
+            </div>
+            <div class="normbar">
+              <div class="typical" style="left:30%;width:40%;"></div>
+              <div class="marker" style="left:32%;"></div>
+            </div>
+          </div>
+          <div class="pc-foot">
+            <span class="pc-last">Last session: 13 May</span>
+            <span class="trend stable"><span class="arrow">&#8594;</span> Stable</span>
+          </div>
+        </a>
+
+      </div>
+
+      <!-- legend -->
+      <div class="legend">
+        <div class="item">
+          <span class="swatch typ"></span> Typical range for age &amp; education
+        </div>
+        <div class="item">
+          <span class="mk"></span> Patient score — within range
+        </div>
+        <div class="item">
+          <span class="mk el"></span> Patient score — below typical range
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: side column -->
+    <div class="side-col">
+
+      <!-- Upcoming sessions -->
+      <div class="side-panel">
+        <div class="panel-head">
+          <h2>Upcoming sessions</h2>
+        </div>
+        <div class="schedule-list">
+          <div class="schedule-item">
+            <div class="sched-date">
+              <div class="day">15</div>
+              <div class="mon">May</div>
+            </div>
+            <div class="sched-info">
+              <div class="pname">Greet Janssen</div>
+              <div class="ptype">Longitudinal · session 22</div>
+            </div>
+            <span class="sched-status confirmed">Confirmed</span>
+          </div>
+          <div class="schedule-item">
+            <div class="sched-date">
+              <div class="day">16</div>
+              <div class="mon">May</div>
+            </div>
+            <div class="sched-info">
+              <div class="pname">Pieter Mulder</div>
+              <div class="ptype">Longitudinal · session 17</div>
+            </div>
+            <span class="sched-status pending">Reminder sent</span>
+          </div>
+          <div class="schedule-item">
+            <div class="sched-date">
+              <div class="day">19</div>
+              <div class="mon">May</div>
+            </div>
+            <div class="sched-info">
+              <div class="pname">Sophie Hendriks</div>
+              <div class="ptype">First assessment</div>
+            </div>
+            <span class="sched-status confirmed">Confirmed</span>
+          </div>
+        </div>
+        <div class="panel-foot">
+          <button class="btn-ghost" onclick="window.location.href='schedule.html'">View full schedule</button>
+        </div>
+      </div>
+
+      <!-- Reminders / action items -->
+      <div class="side-panel">
+        <div class="panel-head">
+          <h2>Needs your attention</h2>
+        </div>
+        <div>
+          <div class="reminder-item">
+            <div class="rem-dot"></div>
+            <div>
+              <div class="rem-text"><b>Anna Bakker</b> shows a declining trend over the last 3 sessions.</div>
+              <div class="rem-time">Flagged 12 May</div>
+            </div>
+          </div>
+          <div class="reminder-item">
+            <div class="rem-dot soft"></div>
+            <div>
+              <div class="rem-text"><b>Pieter Mulder</b> last session was interrupted — review session quality before interpreting.</div>
+              <div class="rem-time">Flagged 30 Apr</div>
+            </div>
+          </div>
+          <div class="reminder-item">
+            <div class="rem-dot soft"></div>
+            <div>
+              <div class="rem-text"><b>Greet Janssen</b> has not completed her scheduled session.</div>
+              <div class="rem-time">Due since 28 Apr</div>
+            </div>
+          </div>
+        </div>
+        <div class="panel-foot">
+          <button class="btn-ghost">Send reminders</button>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<script src="mock-data.js"></script>
+<script>
+const ML = window.MemoryLabData;
+
+function trendHtml(trend) {
+  if (trend === 'declining') return '<span class="trend declining"><span class="arrow">&#8600;</span> Declining</span>';
+  if (trend === 'new') return '<span class="trend new"><span class="arrow">&#8226;</span> New patient</span>';
+  return '<span class="trend stable"><span class="arrow">&#8594;</span> Stable</span>';
+}
+
+function renderDashboardSummary() {
+  const stats = document.querySelectorAll('.summary .stat');
+  if (stats[0]) stats[0].querySelector('.value').textContent = ML.patients.length;
+  if (stats[1]) stats[1].querySelector('.value').textContent = ML.completedThisWeek();
+  if (stats[2]) stats[2].querySelector('.value').textContent = ML.patients.filter(patient => patient.flagged).length;
+}
+
+function renderPatientGrid() {
+  const grid = document.querySelector('.patient-grid');
+  if (!grid) return;
+
+  grid.innerHTML = ML.patients.map(patient => {
+    const latest = ML.latestSession(patient);
+    const sgma = Math.round(ML.sofToSGMA(latest.sof));
+    const marker = ML.dashboardMarkerPercent(patient);
+    const elevated = patient.flagged || marker < 25 ? ' elevated' : '';
+    const badges = patient.dashboardBadges.map(badge => `<span class="badge ${badge.type}">${badge.label}</span>`).join('');
+
+    return `
+      <a class="patient-card" href="patient_profile.html?patient=${patient.id}">
+        <div class="pc-top">
+          <div>
+            <div class="pc-name">${patient.name}</div>
+            <div class="pc-sub">${patient.age} yrs &middot; ${patient.sessions.length} sessions</div>
+          </div>
+          <div class="pc-badges">${badges}</div>
+        </div>
+        <div class="pc-score">
+          <div class="pc-score-label">
+            <span>SGMA score</span>
+            <b>${sgma}</b>
+          </div>
+          <div class="normbar">
+            <div class="typical" style="left:30%;width:40%;"></div>
+            <div class="marker${elevated}" style="left:${marker}%;"></div>
+          </div>
+        </div>
+        <div class="pc-foot">
+          <span class="pc-last">Last session: ${latest.date}</span>
+          ${trendHtml(patient.trend)}
+        </div>
+      </a>`;
+  }).join('');
+}
+
+function renderUpcomingSessions() {
+  const list = document.querySelector('.schedule-list');
+  if (!list) return;
+
+  list.innerHTML = ML.upcomingSessions(3).map(event => {
+    const patient = ML.getPatient(event.pid);
+    const statusClass = event.status === 'confirmed' ? 'confirmed' : 'pending';
+    const statusLabel = event.note || (event.status === 'confirmed' ? 'Confirmed' : event.status);
+
+    return `
+      <div class="schedule-item" onclick="window.location.href='schedule.html?patient=${patient.id}'">
+        <div class="sched-date">
+          <div class="day">${event.date.getDate()}</div>
+          <div class="mon">${event.date.toLocaleDateString('en-GB', { month: 'short' })}</div>
+        </div>
+        <div class="sched-info">
+          <div class="pname">${patient.name}</div>
+          <div class="ptype">Longitudinal &middot; session ${patient.sessions.length + 1}</div>
+        </div>
+        <span class="sched-status ${statusClass}">${statusLabel}</span>
+      </div>`;
+  }).join('');
+}
+
+function renderReminders() {
+  const reminderHost = document.querySelectorAll('.side-panel')[1];
+  if (!reminderHost) return;
+
+  const bodyItems = ML.reminders().map(item => {
+    const patient = ML.getPatient(item.patientId);
+    return `
+      <div class="reminder-item" onclick="window.location.href='patient_profile.html?patient=${patient.id}'">
+        <div class="rem-dot ${item.tone === 'soft' ? 'soft' : ''}"></div>
+        <div>
+          <div class="rem-text"><b>${patient.name}</b> ${item.text.replace(patient.name + ' ', '')}</div>
+          <div class="rem-time">${item.time}</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  const footer = reminderHost.querySelector('.panel-foot');
+  Array.from(reminderHost.querySelectorAll('.reminder-item')).forEach(item => item.remove());
+  reminderHost.querySelector('.panel-head').insertAdjacentHTML('afterend', bodyItems);
+  if (footer) reminderHost.appendChild(footer);
+}
+
+window.addEventListener('load', () => {
+  renderDashboardSummary();
+  renderPatientGrid();
+  renderUpcomingSessions();
+  renderReminders();
+});
+</script>
+</body>
+</html>

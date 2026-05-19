@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MemoryLab — Patient Profile</title>
+<style>
+  :root {
+    --red:#BE0A1E; --navy:#1A2340; --navy-soft:#2C3658;
+    --bg:#F4F5F7; --card:#FFFFFF; --border:#E2E4E9;
+    --text:#1F2433; --text-soft:#6B7080; --text-faint:#9499A6;
+    --accent-soft:#FBEBED; --good:#3B7D6E; --good-soft:#EAF2F0;
+    --watch:#C77B30; --watch-soft:#FBF1E3;
+    --b-good:#D6EAD8; --b-above:#DEE9F5; --b-avg:#E8EDF4;
+    --b-below:#F5E8D6; --b-low:#F5D6D9;
+    --shadow:0 1px 3px rgba(26,35,64,.06),0 1px 2px rgba(26,35,64,.04);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Segoe UI','Helvetica Neue',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+
+  /* topbar */
+  .topbar{background:var(--navy);color:#fff;height:56px;display:flex;align-items:center;padding:0 28px;gap:32px;}
+  .logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:15px;}
+  .logo-mark{width:24px;height:24px;background:var(--red);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;}
+  .logo span{color:#B9BECE;font-weight:400;}
+  .nav{display:flex;gap:4px;margin-left:12px;}
+  .nav a{color:#B9BECE;text-decoration:none;padding:7px 14px;border-radius:6px;font-size:13px;transition:background .15s,color .15s;}
+  .nav a:hover{color:#fff;background:var(--navy-soft);}
+  .nav a.active{color:#fff;background:var(--navy-soft);font-weight:600;}
+  .topbar-right{margin-left:auto;display:flex;align-items:center;gap:18px;}
+  .clinician-badge{display:flex;align-items:center;gap:9px;font-size:13px;}
+  .avatar{width:30px;height:30px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;}
+  .meta{line-height:1.25;} .meta .name{font-weight:600;} .meta .role{color:#B9BECE;font-size:11.5px;}
+
+  /* page */
+  .page{max-width:1180px;margin:0 auto;padding:22px 28px 40px;}
+  .breadcrumb{font-size:12.5px;color:var(--text-soft);margin-bottom:16px;}
+  .breadcrumb a{color:var(--text-soft);text-decoration:none;}
+  .breadcrumb a:hover{color:var(--navy);}
+  .breadcrumb .sep{margin:0 7px;color:var(--text-faint);}
+  .breadcrumb .current{color:var(--navy);font-weight:600;}
+
+  /* patient header */
+  .patient-header{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:22px 26px;box-shadow:var(--shadow);display:flex;align-items:center;gap:22px;margin-bottom:22px;}
+  .patient-avatar{width:60px;height:60px;border-radius:14px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;flex-shrink:0;}
+  .ph-main{flex:1;}
+  .ph-main h1{font-size:22px;font-weight:700;color:var(--navy);letter-spacing:-.2px;}
+  .ph-tags{display:flex;gap:8px;margin-top:7px;flex-wrap:wrap;}
+  .ph-tag{font-size:12px;color:var(--text-soft);background:var(--bg);padding:4px 10px;border-radius:5px;border:1px solid var(--border);}
+  .ph-tag b{color:var(--navy);font-weight:600;}
+  .ph-actions{display:flex;gap:10px;}
+  .btn-primary{background:var(--red);color:#fff;border:none;padding:10px 18px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s;}
+  .btn-primary:hover{background:#A50918;}
+  .btn-outline{background:#fff;color:var(--navy);border:1px solid var(--border);padding:10px 18px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;}
+  .btn-outline:hover{background:var(--bg);border-color:var(--text-faint);}
+
+  /* layout */
+  .body-grid{display:grid;grid-template-columns:1fr 340px;gap:22px;align-items:start;}
+  .col-main{display:flex;flex-direction:column;gap:22px;}
+  .col-side{display:flex;flex-direction:column;gap:22px;}
+
+  /* panel */
+  .panel{background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);}
+  .panel-head{padding:15px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+  .step-num{width:22px;height:22px;border-radius:50%;background:var(--navy);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .panel-head h2{font-size:15px;font-weight:700;color:var(--navy);}
+  .panel-head .subtitle{font-size:12px;color:var(--text-faint);margin-left:auto;}
+  .panel-body{padding:20px 22px;}
+
+  /* session quality */
+  .quality-banner{display:flex;align-items:center;gap:12px;background:var(--good-soft);border-radius:9px;padding:13px 16px;margin-bottom:18px;}
+  .quality-banner .icon{width:30px;height:30px;border-radius:50%;background:var(--good);color:#fff;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;}
+  .quality-banner .qb-text{font-size:13px;}
+  .quality-banner .qb-text b{color:var(--good);}
+  .quality-banner.caution{background:var(--watch-soft);}
+  .quality-banner.caution .icon{background:var(--watch);}
+  .quality-banner.caution .qb-text b{color:var(--watch);}
+  /* 4-column grid for quality (added non-retrieval time) */
+  .quality-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+  .qm{border:1px solid var(--border);border-radius:9px;padding:13px 15px;}
+  .qm .qm-label{font-size:11px;color:var(--text-soft);text-transform:uppercase;letter-spacing:.4px;font-weight:600;display:flex;align-items:center;}
+  .qm .qm-value{font-size:20px;font-weight:700;color:var(--navy);margin-top:5px;line-height:1;}
+  .qm .qm-note{font-size:11px;color:var(--text-faint);margin-top:5px;}
+  .qm .qm-value.ok{color:var(--good);}
+
+  /* score triple */
+  .score-triple{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px;}
+  .st-card{border:1px solid var(--border);border-radius:10px;padding:16px 18px;}
+  .st-card.primary{background:var(--navy);border-color:var(--navy);}
+  .st-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text-faint);margin-bottom:6px;display:flex;align-items:center;}
+  .st-card.primary .st-label{color:#8A94B0;}
+  .st-value{font-size:34px;font-weight:800;color:var(--navy);line-height:1;letter-spacing:-1px;}
+  .st-card.primary .st-value{color:#fff;}
+  .st-sub{font-size:12px;color:var(--text-faint);margin-top:6px;}
+  .st-card.primary .st-sub{color:#8A94B0;}
+  .st-band{display:inline-block;margin-top:8px;font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:5px;}
+
+  /* education selector */
+  .edu-selector{display:flex;align-items:center;gap:10px;background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:11px 16px;margin-bottom:18px;}
+  .edu-selector label{font-size:12.5px;font-weight:600;color:var(--navy);white-space:nowrap;}
+  .edu-selector select{flex:1;font-size:13px;color:var(--text);background:#fff;border:1px solid var(--border);border-radius:6px;padding:6px 10px;cursor:pointer;outline:none;font-family:inherit;}
+  .edu-selector select:focus{border-color:var(--navy);}
+  .edu-note{font-size:11.5px;color:var(--text-faint);}
+
+  /* tooltips */
+  .tip-wrap{position:relative;display:inline-flex;align-items:center;}
+  .tip-icon{width:16px;height:16px;border-radius:50%;background:var(--border);color:var(--text-soft);font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;cursor:help;margin-left:6px;flex-shrink:0;transition:background .15s;}
+  .tip-icon:hover{background:var(--navy);color:#fff;}
+  .tip-box{display:none;position:absolute;z-index:100;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;font-size:12px;line-height:1.5;padding:10px 14px;border-radius:8px;width:220px;text-align:left;box-shadow:0 4px 16px rgba(0,0,0,.18);font-weight:400;}
+  .tip-box::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:var(--navy);}
+  .tip-wrap:hover .tip-box{display:block;}
+
+  /* charts */
+  .norm-chart-wrap{position:relative;}
+  .norm-canvas{display:block;width:100%;border-radius:8px;}
+  .norm-caption{font-size:11.5px;color:var(--text-soft);margin-top:10px;}
+  .band-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);}
+  .bl-item{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text-soft);}
+  .bl-swatch{width:14px;height:14px;border-radius:3px;flex-shrink:0;}
+  .interpretation{margin-top:16px;padding:14px 16px;background:var(--bg);border-radius:9px;border-left:3px solid var(--navy);font-size:13px;color:var(--text);line-height:1.55;}
+  .interpretation b{color:var(--navy);}
+  .traj-canvas{display:block;width:100%;border-radius:8px;}
+  .traj-legend{display:flex;gap:20px;margin-top:12px;font-size:11.5px;color:var(--text-soft);flex-wrap:wrap;}
+  .traj-legend .item{display:flex;align-items:center;gap:6px;}
+  .traj-legend .ln{width:18px;height:3px;border-radius:2px;}
+  .traj-legend .mk{width:10px;height:10px;border-radius:50%;background:var(--red);}
+
+  /* side column */
+  .consult-q{padding:14px 20px;border-bottom:1px solid #EEF0F3;}
+  .consult-q:last-child{border-bottom:none;}
+  .cq-label{font-size:12px;font-weight:700;color:var(--navy);margin-bottom:5px;}
+  .cq-answer{font-size:12.5px;color:var(--text);line-height:1.5;}
+  .cq-answer.empty{color:var(--text-faint);font-style:italic;}
+  .cq-prev{font-size:11px;color:var(--text-faint);margin-top:5px;}
+  .pq-item{padding:13px 20px;border-bottom:1px solid #EEF0F3;display:flex;gap:11px;}
+  .pq-item:last-child{border-bottom:none;}
+  .pq-bubble{width:26px;height:26px;border-radius:8px;flex-shrink:0;background:var(--accent-soft);color:var(--red);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;}
+  .pq-text{font-size:12.5px;color:var(--text);line-height:1.5;}
+  .pq-date{font-size:11px;color:var(--text-faint);margin-top:3px;}
+  .hist-item{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid #EEF0F3;font-size:12.5px;}
+  .hist-item:last-child{border-bottom:none;}
+  .hist-date{color:var(--text-soft);}
+  .hist-scores{display:flex;gap:14px;align-items:center;}
+  .hist-sgma{font-weight:700;color:var(--navy);}
+  .hist-sof{font-size:11px;color:var(--text-faint);}
+  .hist-q{font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:4px;}
+  .hist-q.good{background:var(--good-soft);color:var(--good);}
+  .hist-q.caution{background:var(--watch-soft);color:var(--watch);}
+  .panel-foot{padding:12px 20px;border-top:1px solid var(--border);}
+  .btn-ghost{width:100%;background:#fff;border:1px solid var(--border);color:var(--navy);padding:8px;border-radius:7px;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s;}
+  .btn-ghost:hover{background:var(--bg);border-color:var(--text-faint);}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo"><div class="logo-mark">M</div>MemoryLab <span>&nbsp;Clinical</span></div>
+  <nav class="nav">
+    <a href="dashboard.html">Dashboard</a><a href="patient_profile.html" class="active">Patients</a><a href="schedule.html">Schedule</a>
+  </nav>
+  <div class="topbar-right">
+    <div class="clinician-badge">
+      <div class="avatar">EV</div>
+      <div class="meta"><div class="name">Dr. E. Visser</div><div class="role">General Practitioner</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="page">
+  <div class="breadcrumb">
+    <a href="dashboard.html">Dashboard</a><span class="sep">&rsaquo;</span>
+    <a href="dashboard.html">Patients</a><span class="sep">&rsaquo;</span>
+    <span class="current">Anna Bakker</span>
+  </div>
+
+  <div class="patient-header">
+    <div class="patient-avatar">AB</div>
+    <div class="ph-main">
+      <h1>Anna Bakker</h1>
+      <div class="ph-tags">
+        <span class="ph-tag"><b>72</b> years</span>
+        <span class="ph-tag">Education: <b>Vocational (MBO/VMBO)</b></span>
+        <span class="ph-tag">Status: <b>Monitoring — MCI screen</b></span>
+        <span class="ph-tag"><b>14</b> sessions completed</span>
+        <span class="ph-tag">Patient since <b>Jan 2026</b></span>
+      </div>
+    </div>
+    <div class="ph-actions">
+      <button class="btn-outline" onclick="window.location.href='schedule.html'">Schedule session</button>
+      <button class="btn-primary" onclick="window.location.href='patients_view.html'">Show to patient</button>
+    </div>
+  </div>
+
+  <div class="body-grid">
+    <div class="col-main">
+
+      <!--  Session quality — I included 4 metrics thaat might be important -->
+      <div class="panel">
+        <div class="panel-head">
+          <div class="step-num">1</div>
+          <h2>Session quality</h2>
+          <span class="subtitle">Latest session &middot; 12 May 2026</span>
+        </div>
+        <div class="panel-body">
+          <div class="quality-banner caution">
+            <div class="icon">!</div>
+            <div class="qb-text">
+              <b>Interpret with caution.</b> This session had a gap mid-session &mdash;
+              the score may be less reliable than usual. Consider repeating before drawing conclusions.
+            </div>
+          </div>
+          <div class="quality-metrics">
+            <div class="qm">
+              <div class="qm-label">
+                Trials completed
+                <span class="tip-wrap">
+                  <span class="tip-icon">?</span>
+                  <span class="tip-box">Number of individual test items the patient responded to. Fewer than 35 may indicate an incomplete session.</span>
+                </span>
+              </div>
+              <div class="qm-value">38</div>
+            </div>
+            <div class="qm">
+              <div class="qm-label">
+                Interruptions
+                <span class="tip-wrap">
+                  <span class="tip-icon">?</span>
+                  <span class="tip-box">Gaps of more than 90 seconds detected during the session. Interruptions can affect the adaptive scheduling and reduce score reliability.</span>
+                </span>
+              </div>
+              <div class="qm-value">1</div>
+              <div class="qm-note">4 min gap detected</div>
+            </div>
+            <div class="qm">
+              <div class="qm-label">
+                Non-retrieval time
+                <span class="tip-wrap">
+                  <span class="tip-icon">?</span>
+                  <span class="tip-box">Average time (seconds) the patient spent on items they ultimately could not recall. Higher values may indicate increased retrieval effort or fatigue.</span>
+                </span>
+              </div>
+              <div class="qm-value">4.2<span style="font-size:13px;font-weight:500;">s</span></div>
+              <div class="qm-note">Slightly elevated (&gt;3.5s)</div>
+            </div>
+            <div class="qm">
+              <div class="qm-label">
+                Session length
+                <span class="tip-wrap">
+                  <span class="tip-icon">?</span>
+                  <span class="tip-box">Total time from session start to last response. Sessions under 5 min may not provide enough data for a reliable SoF estimate.</span>
+                </span>
+              </div>
+              <div class="qm-value ok">8:12</div>
+              <div class="qm-note">Completed in full</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Current SGMA score, the calculations are based on the actual numbers of the markdown-->
+      <div class="panel">
+        <div class="panel-head">
+          <div class="step-num">2</div>
+          <h2>Current SGMA score</h2>
+          <span class="subtitle" id="scoreSubtitle">Latest session &middot; SoF 0.44 &middot; 12 May 2026</span>
+        </div>
+        <div class="panel-body">
+
+          <!-- Score triple -->
+          <div class="score-triple">
+            <div class="st-card primary">
+              <div class="st-label">
+                SGMA Score
+                <span class="tip-wrap">
+                  <span class="tip-icon" style="background:rgba(255,255,255,0.2);color:#fff;">?</span>
+                  <span class="tip-box">The Seattle&ndash;Groningen Memory Assessment score. Ranges from 30&ndash;170; higher is better. The midpoint of 100 represents the median for a typical adult. Derived from the Speed of Forgetting using a sigmoid transformation.</span>
+                </span>
+              </div>
+              <div class="st-value" id="sgmaVal">53</div>
+              <div class="st-sub">Scale 30&ndash;170 &middot; midpoint 100</div>
+              <span class="st-band" id="bandTag" style="background:#F5D6D9;color:#8B1A2A;">Below average</span>
+            </div>
+            <div class="st-card">
+              <div class="st-label">
+                Percentile
+                <span class="tip-wrap">
+                  <span class="tip-icon">?</span>
+                  <span class="tip-box">Where this patient ranks relative to others of the same age and education level. A percentile of 31 means 69% of the reference group performs better.</span>
+                </span>
+              </div>
+              <div class="st-value" style="color:var(--red);" id="pctVal">31<span style="font-size:18px;font-weight:600;">st</span></div>
+              <div class="st-sub" id="pctSub">For age 72, vocational education</div>
+            </div>
+            <div class="st-card">
+              <div class="st-label">
+                Speed of Forgetting
+                <span class="tip-wrap">
+                  <span class="tip-icon">?</span>
+                  <span class="tip-box">The raw &phi; parameter from the ACT-R memory model. Higher values mean faster forgetting. This is the direct output of the adaptive fact-learning algorithm, used internally to compute the SGMA score and percentile.</span>
+                </span>
+              </div>
+              <div class="st-value" style="font-size:26px;padding-top:4px;">0.44</div>
+              <div class="st-sub">Raw model parameter (clinical ref.)</div>
+            </div>
+          </div>
+
+          <!-- Education level selector -->
+          <div class="edu-selector">
+            <label for="eduSelect">&#x1F4CA; Norm group &mdash; education:</label>
+            <select id="eduSelect" onchange="redrawCharts()">
+              <option value="0">Elementary (Basisonderwijs)</option>
+              <option value="1" selected>Vocational (MBO/VMBO)</option>
+              <option value="2">Pre-university (HAVO/VWO)</option>
+              <option value="3">Higher vocational (HBO)</option>
+              <option value="4">Academic (Universitair)</option>
+            </select>
+            <span class="edu-note">Both charts update automatically</span>
+          </div>
+
+          <!-- Norm plot -->
+          <div class="norm-chart-wrap">
+            <canvas id="normPlot" class="norm-canvas" height="240"></canvas>
+          </div>
+          <div class="norm-caption" id="normCaption">
+            SGMA norm chart for <b>age 15&ndash;80, vocational education (MBO/VMBO)</b>.
+            Each band is a performance category relative to the norm group. Anna&rsquo;s dot (age 72) is from her latest session.
+          </div>
+
+          <div class="band-legend">
+            <div class="bl-item"><div class="bl-swatch" style="background:var(--b-good);border:1px solid #aac9ae;"></div>Good (top 20%)</div>
+            <div class="bl-item"><div class="bl-swatch" style="background:var(--b-above);border:1px solid #9db8d8;"></div>Above average (60&ndash;80th pct)</div>
+            <div class="bl-item"><div class="bl-swatch" style="background:var(--b-avg);border:1px solid #b0b9cc;"></div>Average (40&ndash;60th pct)</div>
+            <div class="bl-item"><div class="bl-swatch" style="background:var(--b-below);border:1px solid #d8b89a;"></div>Below average (20&ndash;40th pct)</div>
+            <div class="bl-item"><div class="bl-swatch" style="background:var(--b-low);border:1px solid #d8a0a8;"></div>Low (bottom 20%)</div>
+          </div>
+
+          <div class="interpretation" id="scoreInterp">
+            Anna&rsquo;s SGMA score of <b>53</b> places her at the <b>31st percentile</b>
+            for her age and education group &mdash; in the <b>below average</b> band.
+            A lower SGMA score indicates a faster speed of forgetting.
+            This is <b>not a diagnosis</b>, but warrants continued monitoring.
+            Review alongside session quality above and the trend chart below.
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 3: Longitudinal trend -->
+      <div class="panel">
+        <div class="panel-head">
+          <div class="step-num">3</div>
+          <h2>SGMA trend over time</h2>
+          <span class="subtitle">14 sessions &middot; Jan&ndash;May 2026</span>
+        </div>
+        <div class="panel-body">
+          <canvas id="trajPlot" class="traj-canvas" height="240"></canvas>
+          <div class="traj-legend">
+            <div class="item"><span class="ln" style="background:var(--red);"></span>Anna&rsquo;s SGMA score per session</div>
+            <div class="item"><span class="mk"></span>Latest session (12 May)</div>
+            <div class="item" style="color:var(--text-faint);">Bands = norm categories for age 72 at selected education level</div>
+          </div>
+          <div class="interpretation" style="margin-top:14px;">
+            Anna&rsquo;s SGMA score has <b>declined steadily</b> from ~85 in January to 53 in May,
+            moving from the <b>above average</b> band into the <b>below average</b> band.
+            The consistent direction across 14 sessions strengthens the reliability of this trend.
+            Recommend discussing follow-up neuropsychological assessment.
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- right column -->
+    <div class="col-side">
+      <div class="panel">
+        <div class="panel-head"><h2>Consultation notes</h2></div>
+        <div>
+          <div class="consult-q">
+            <div class="cq-label">Primary concern today</div>
+            <div class="cq-answer empty">Not recorded yet &mdash; ask during visit</div>
+          </div>
+          <div class="consult-q">
+            <div class="cq-label">Medication questions</div>
+            <div class="cq-answer">Asked whether blood pressure medication affects memory.</div>
+            <div class="cq-prev">From last visit &middot; 14 Apr</div>
+          </div>
+          <div class="consult-q">
+            <div class="cq-label">Goal for next session</div>
+            <div class="cq-answer">Patient wants to keep doing weekly sessions; daughter will help set reminders.</div>
+            <div class="cq-prev">From last visit &middot; 14 Apr</div>
+          </div>
+        </div>
+        <div class="panel-foot"><button class="btn-ghost">Add note for this visit</button></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2>Questions from Anna</h2></div>
+        <div>
+          <div class="pq-item">
+            <div class="pq-bubble">?</div>
+            <div>
+              <div class="pq-text">&ldquo;Is it normal that some weeks feel much harder than others?&rdquo;</div>
+              <div class="pq-date">Submitted 9 May via patient app</div>
+            </div>
+          </div>
+          <div class="pq-item">
+            <div class="pq-bubble">?</div>
+            <div>
+              <div class="pq-text">&ldquo;Should my husband do the test too?&rdquo;</div>
+              <div class="pq-date">Submitted 2 May via patient app</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2>Recent sessions</h2></div>
+        <div>
+          <div class="hist-item">
+            <span class="hist-date">12 May</span>
+            <span class="hist-scores"><span class="hist-sgma">SGMA 53</span><span class="hist-sof">SoF 0.44</span></span>
+            <span class="hist-q caution">Caution</span>
+          </div>
+          <div class="hist-item">
+            <span class="hist-date">5 May</span>
+            <span class="hist-scores"><span class="hist-sgma">SGMA 59</span><span class="hist-sof">SoF 0.42</span></span>
+            <span class="hist-q good">Good</span>
+          </div>
+          <div class="hist-item">
+            <span class="hist-date">28 Apr</span>
+            <span class="hist-scores"><span class="hist-sgma">SGMA 62</span><span class="hist-sof">SoF 0.41</span></span>
+            <span class="hist-q good">Good</span>
+          </div>
+          <div class="hist-item">
+            <span class="hist-date">21 Apr</span>
+            <span class="hist-scores"><span class="hist-sgma">SGMA 66</span><span class="hist-sof">SoF 0.40</span></span>
+            <span class="hist-q good">Good</span>
+          </div>
+        </div>
+        <div class="panel-foot"><button class="btn-ghost">View all 14 sessions</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="mock-data.js"></script>
+<script>
+const ML = window.MemoryLabData;
+let SELECTED_PATIENT = ML.getPatientFromUrl();
+/* ══════════════════════════════════════════════════════════
+   SGMA NORM CALCULATION ENGINE
+   THis is based on what is provided in SGMA_Norm_Calculation_Reference.md
+   ══════════════════════════════════════════════════════════ */
+
+function normCDF(z) {
+  const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
+  const sign=z<0?-1:1, x=Math.abs(z)/Math.sqrt(2), t=1/(1+p*x);
+  const y=1-(((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-x*x);
+  return 0.5*(1+sign*y);
+}
+
+function normInvCDF(p) {
+  const a=[-3.969683028665376e+01,2.209460984245205e+02,-2.759285104469687e+02,1.383577518672690e+02,-3.066479806614716e+01,2.506628277459239e+00];
+  const b=[-5.447609879822406e+01,1.615858368580409e+02,-1.556989798598866e+02,6.680131188771972e+01,-1.328068155288572e+01];
+  const c=[-7.784894002430293e-03,-3.223964580411365e-01,-2.400758277161838e+00,-2.549732539343734e+00,4.374664141464968e+00,2.938163982698783e+00];
+  const d=[7.784695709041462e-03,3.224671290700398e-01,2.445134137142996e+00,3.754408661907416e+00];
+  const plow=0.02425, phigh=1-plow;
+  let q;
+  if(p<plow){q=Math.sqrt(-2*Math.log(p));return(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);}
+  else if(p<=phigh){q=p-0.5;const r=q*q;return(((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q/(((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);}
+  else{q=Math.sqrt(-2*Math.log(1-p));return-(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);}
+}
+
+/* Education offsets exactly as specified in the document:
+   0=Elementary(0.000), 1=Vocational(-0.006), 2=Pre-university(-0.021),
+   3=Higher vocational(-0.024), 4=Academic(-0.036) */
+const EDU_OFFSETS = [0.000, -0.006, -0.021, -0.024, -0.036];
+const EDU_LABELS  = ['Elementary','Vocational (MBO/VMBO)','Pre-university (HAVO/VWO)','Higher vocational (HBO)','Academic'];
+const B0=0.32, B_AGE=0.0015, SIGMA=0.036;
+
+function predictedSoF(age,off){ return B0 + B_AGE*age + off; }
+function sofAtPercentile(age,p,off){ return predictedSoF(age,off) - normInvCDF(p)*SIGMA; }
+function sofToSGMA(sof){ return 140/(1+Math.exp(15*(sof-0.33)))+30; }
+function calcPercentile(age,sof,off){ return normCDF((predictedSoF(age,off)-sof)/SIGMA)*100; }
+
+function bandName(pct) {
+  if(pct>=80) return {name:'Good',         bg:'#D6EAD8',fg:'#2A5C2F'};
+  if(pct>=60) return {name:'Above average',bg:'#DEE9F5',fg:'#1F4070'};
+  if(pct>=40) return {name:'Average',      bg:'#E8EDF4',fg:'#3A4560'};
+  if(pct>=20) return {name:'Below average',bg:'#F5E8D6',fg:'#7A4510'};
+              return {name:'Low',           bg:'#F5D6D9',fg:'#8B1A2A'};
+}
+
+function ordinal(n) {
+  const s=Math.round(n); const j=s%10, k=s%100;
+  if(j===1&&k!==11) return s+'st';
+  if(j===2&&k!==12) return s+'nd';
+  if(j===3&&k!==13) return s+'rd';
+  return s+'th';
+}
+
+/* ── Patient data from shared mock-data.js ── */
+let PATIENT = { age: SELECTED_PATIENT.age, observedSoF: ML.latestSession(SELECTED_PATIENT).sof };
+let SESSIONS = SELECTED_PATIENT.sessions;
+
+function setText(selector, text) {
+  const el = document.querySelector(selector);
+  if (el) el.textContent = text;
+}
+
+function setHtml(selector, html) {
+  const el = document.querySelector(selector);
+  if (el) el.innerHTML = html;
+}
+
+function profileUrl(patient) {
+  return 'patient_profile.html?patient=' + encodeURIComponent(patient.id);
+}
+
+function patientViewUrl(patient) {
+  return 'patients_view.html?patient=' + encodeURIComponent(patient.id);
+}
+
+function qualityCopy(session) {
+  if (session.quality === 'caution') {
+    return {
+      cls: 'quality-banner caution',
+      icon: '!',
+      html: '<b>Interpret with caution.</b> This session had a gap or quality concern - the score may be less reliable than usual. Consider repeating before drawing conclusions.',
+    };
+  }
+  return {
+    cls: 'quality-banner',
+    icon: '&#10003;',
+    html: '<b>Good quality session.</b> The session was completed without major interruptions and is suitable for trend interpretation.',
+  };
+}
+
+function trendDescription(patient) {
+  if (patient.trend === 'declining') return patient.name + "'s SGMA score " + patient.trendSummary + ' Consider follow-up if this pattern continues.';
+  if (patient.trend === 'new') return patient.name + "'s SGMA results are still establishing a baseline. More sessions are needed before interpreting a trend.";
+  return patient.name + "'s SGMA score " + patient.trendSummary;
+}
+
+function renderProfileShell() {
+  SELECTED_PATIENT = ML.getPatientFromUrl();
+  PATIENT = { age: SELECTED_PATIENT.age, observedSoF: ML.latestSession(SELECTED_PATIENT).sof };
+  SESSIONS = SELECTED_PATIENT.sessions;
+
+  const latest = ML.latestSession(SELECTED_PATIENT);
+  const edu = ML.educationFor(SELECTED_PATIENT.educationCode);
+  const quality = qualityCopy(latest);
+
+  document.title = 'MemoryLab - ' + SELECTED_PATIENT.name;
+  setText('.breadcrumb .current', SELECTED_PATIENT.name);
+  setText('.patient-avatar', SELECTED_PATIENT.initials);
+  setText('.ph-main h1', SELECTED_PATIENT.name);
+  setHtml('.ph-tags', `
+    <span class="ph-tag"><b>${SELECTED_PATIENT.age}</b> years</span>
+    <span class="ph-tag">Education: <b>${edu.fullLabel}</b></span>
+    <span class="ph-tag">Status: <b>${SELECTED_PATIENT.status}</b></span>
+    <span class="ph-tag"><b>${SELECTED_PATIENT.sessions.length}</b> sessions completed</span>
+    <span class="ph-tag">Patient since <b>${SELECTED_PATIENT.patientSince}</b></span>
+  `);
+
+  const scheduleButton = document.querySelector('.ph-actions .btn-outline');
+  if (scheduleButton) scheduleButton.onclick = () => { window.location.href = 'schedule.html?patient=' + SELECTED_PATIENT.id; };
+  const patientButton = document.querySelector('.ph-actions .btn-primary');
+  if (patientButton) patientButton.onclick = () => { window.location.href = patientViewUrl(SELECTED_PATIENT); };
+
+  setText('.panel:nth-of-type(1) .subtitle', 'Latest session · ' + latest.fullDate);
+  const banner = document.querySelector('.quality-banner');
+  if (banner) {
+    banner.className = quality.cls;
+    banner.innerHTML = `<div class="icon">${quality.icon}</div><div class="qb-text">${quality.html}</div>`;
+  }
+
+  const qmValues = document.querySelectorAll('.quality-metrics .qm');
+  if (qmValues[0]) qmValues[0].querySelector('.qm-value').textContent = latest.trials;
+  if (qmValues[1]) {
+    qmValues[1].querySelector('.qm-value').textContent = latest.interruptions;
+    const note = qmValues[1].querySelector('.qm-note');
+    if (note) note.textContent = latest.interruptionNote || (latest.interruptions ? 'Interruption detected' : 'No gaps detected');
+  }
+  if (qmValues[2]) {
+    qmValues[2].querySelector('.qm-value').innerHTML = latest.nonRetrievalTime.toFixed(1) + '<span style="font-size:13px;font-weight:500;">s</span>';
+    const note = qmValues[2].querySelector('.qm-note');
+    if (note) note.textContent = latest.nonRetrievalTime > 3.5 ? 'Slightly elevated (>3.5s)' : 'Within expected range';
+  }
+  if (qmValues[3]) {
+    qmValues[3].querySelector('.qm-value').textContent = latest.duration;
+    const note = qmValues[3].querySelector('.qm-note');
+    if (note) note.textContent = latest.quality === 'caution' ? 'Review quality notes' : 'Completed in full';
+  }
+
+  setText('#scoreSubtitle', 'Latest session · SoF ' + latest.sof.toFixed(2) + ' · ' + latest.fullDate);
+  const sofCard = document.querySelectorAll('.score-triple .st-card')[2];
+  if (sofCard) sofCard.querySelector('.st-value').textContent = latest.sof.toFixed(2);
+  const eduSelect = document.getElementById('eduSelect');
+  if (eduSelect) eduSelect.value = SELECTED_PATIENT.educationCode;
+
+  setText('.panel:nth-of-type(3) .subtitle', SELECTED_PATIENT.sessions.length + ' sessions · ' + SELECTED_PATIENT.sessions[0].label.split(' ')[0] + '–' + latest.label.split(' ')[0] + ' 2026');
+  setHtml('.traj-legend', `
+    <div class="item"><span class="ln" style="background:var(--red);"></span>${SELECTED_PATIENT.name.split(' ')[0]}'s SGMA score per session</div>
+    <div class="item"><span class="mk"></span>Latest session (${latest.date})</div>
+    <div class="item" style="color:var(--text-faint);">Bands = norm categories for age ${SELECTED_PATIENT.age} at selected education level</div>
+  `);
+  const trendInterp = document.querySelector('.panel:nth-of-type(3) .interpretation');
+  if (trendInterp) trendInterp.innerHTML = trendDescription(SELECTED_PATIENT);
+
+  renderConsultationNotes();
+  renderQuestions();
+  renderRecentSessions();
+}
+
+function renderConsultationNotes() {
+  const panel = document.querySelector('.col-side .panel:nth-child(1) > div:nth-child(2)');
+  if (!panel) return;
+  panel.innerHTML = SELECTED_PATIENT.consultationNotes.map(note => `
+    <div class="consult-q">
+      <div class="cq-label">${note.label}</div>
+      <div class="cq-answer ${note.empty ? 'empty' : ''}">${note.answer}</div>
+      ${note.previous ? `<div class="cq-prev">${note.previous}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+function renderQuestions() {
+  const heading = document.querySelector('.col-side .panel:nth-child(2) .panel-head h2');
+  if (heading) heading.textContent = 'Questions from ' + SELECTED_PATIENT.name.split(' ')[0];
+  const panel = document.querySelector('.col-side .panel:nth-child(2) > div:nth-child(2)');
+  if (!panel) return;
+  panel.innerHTML = SELECTED_PATIENT.questions.map(question => `
+    <div class="pq-item">
+      <div class="pq-bubble">?</div>
+      <div>
+        <div class="pq-text">&ldquo;${question.text}&rdquo;</div>
+        <div class="pq-date">${question.date}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderRecentSessions() {
+  const panel = document.querySelector('.col-side .panel:nth-child(3) > div:nth-child(2)');
+  if (!panel) return;
+  panel.innerHTML = ML.recentSessions(SELECTED_PATIENT, 4).map(session => `
+    <div class="hist-item">
+      <span class="hist-date">${session.date}</span>
+      <span class="hist-scores"><span class="hist-sgma">SGMA ${Math.round(sofToSGMA(session.sof))}</span><span class="hist-sof">SoF ${session.sof.toFixed(2)}</span></span>
+      <span class="hist-q ${session.quality === 'caution' ? 'caution' : 'good'}">${session.quality === 'caution' ? 'Caution' : 'Good'}</span>
+    </div>
+  `).join('');
+  const foot = document.querySelector('.col-side .panel:nth-child(3) .panel-foot button');
+  if (foot) foot.textContent = 'View all ' + SELECTED_PATIENT.sessions.length + ' sessions';
+}
+
+/* ══════════════════════════════════════════════════════════
+   MAIN REDRAW — this iscalled on load and when education changes
+   ══════════════════════════════════════════════════════════ */
+function redrawCharts() {
+  const eduIdx = parseInt(document.getElementById('eduSelect').value);
+  const off    = EDU_OFFSETS[eduIdx];
+  const eduLbl = EDU_LABELS[eduIdx];
+
+  /* Recompute patient metrics */
+  const patSGMA = sofToSGMA(PATIENT.observedSoF);
+  const patPct  = calcPercentile(PATIENT.age, PATIENT.observedSoF, off);
+  const band    = bandName(patPct);
+
+  /* Update score readout */
+  document.getElementById('sgmaVal').textContent = Math.round(patSGMA);
+  const pctEl = document.getElementById('pctVal');
+  pctEl.innerHTML = ordinal(Math.round(patPct)) + '';
+  document.getElementById('pctSub').textContent = 'For age '+PATIENT.age+', '+eduLbl.toLowerCase();
+  const bandTag = document.getElementById('bandTag');
+  bandTag.textContent = band.name;
+  bandTag.style.background = band.bg;
+  bandTag.style.color = band.fg;
+
+  /* Update caption */
+  document.getElementById('normCaption').innerHTML =
+    'SGMA norm chart for <b>age 15&ndash;80, '+eduLbl+'</b>. '+
+    'Each band is a performance category relative to the norm group. '+
+    SELECTED_PATIENT.name.split(' ')[0]+'&rsquo;s dot (age '+PATIENT.age+') is from the latest session.';
+
+  /* Update interpretation */
+  document.getElementById('scoreInterp').innerHTML =
+    SELECTED_PATIENT.name.split(' ')[0]+'&rsquo;s SGMA score of <b>'+Math.round(patSGMA)+'</b> places this patient at the '+
+    '<b>'+ordinal(Math.round(patPct))+'</b> '+
+    'for her age and education group &mdash; in the <b>'+band.name.toLowerCase()+'</b> band. '+
+    'A lower SGMA score indicates a faster speed of forgetting. '+
+    'This is <b>not a diagnosis</b>, but warrants continued monitoring.';
+
+  drawNormPlot(off, eduLbl, patSGMA, patPct);
+  drawTrajPlot(off);
+}
+
+/* ══════════════════════════════════════════════════════════
+   NORM PLOT — Section 2
+   ══════════════════════════════════════════════════════════ */
+function drawNormPlot(off, eduLbl, patSGMA, patPct) {
+  const canvas = document.getElementById('normPlot');
+  const DPR = window.devicePixelRatio || 1;
+  canvas.width  = canvas.offsetWidth * DPR;
+  canvas.height = 240 * DPR;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(DPR, DPR);
+  const W = canvas.offsetWidth, H = 240;
+
+  /* Chart dimensions added extra right padding to hold band labels inside */
+  const PAD = {top:20, right:90, bottom:38, left:52};
+  const plotW = W - PAD.left - PAD.right;
+  const plotH = H - PAD.top  - PAD.bottom;
+  const AGE_MIN=15, AGE_MAX=80, SG_MIN=40, SG_MAX=140;
+
+  function xOf(age)  { return PAD.left + (age-AGE_MIN)/(AGE_MAX-AGE_MIN)*plotW; }
+  function yOf(sgma) { return PAD.top  + (1-(Math.min(SG_MAX,Math.max(SG_MIN,sgma))-SG_MIN)/(SG_MAX-SG_MIN))*plotH; }
+
+  const ages = [];
+  for(let a=AGE_MIN;a<=AGE_MAX;a++) ages.push(a);
+
+  /* Compute band boundary arrays */
+  const p80 = ages.map(a=>sofToSGMA(sofAtPercentile(a,0.80,off)));
+  const p60 = ages.map(a=>sofToSGMA(sofAtPercentile(a,0.60,off)));
+  const p50 = ages.map(a=>sofToSGMA(sofAtPercentile(a,0.50,off)));
+  const p40 = ages.map(a=>sofToSGMA(sofAtPercentile(a,0.40,off)));
+  const p20 = ages.map(a=>sofToSGMA(sofAtPercentile(a,0.20,off)));
+  const top = ages.map(()=>SG_MAX);
+  const bot = ages.map(()=>SG_MIN);
+
+  function fillBand(upper, lower, colour) {
+    ctx.beginPath();
+    ctx.moveTo(xOf(ages[0]), yOf(upper[0]));
+    ages.forEach((a,i)=>ctx.lineTo(xOf(a), yOf(upper[i])));
+    for(let i=ages.length-1;i>=0;i--) ctx.lineTo(xOf(ages[i]), yOf(lower[i]));
+    ctx.closePath();
+    ctx.fillStyle=colour; ctx.fill();
+  }
+
+  fillBand(top, p80, '#D6EAD8');
+  fillBand(p80, p60, '#DEE9F5');
+  fillBand(p60, p40, '#E8EDF4');
+  fillBand(p40, p20, '#F5E8D6');
+  fillBand(p20, bot, '#F5D6D9');
+
+  /* Subtle gridlines */
+  ctx.strokeStyle='rgba(0,0,0,0.05)'; ctx.lineWidth=1;
+  [60,80,100,120].forEach(sg=>{
+    ctx.beginPath(); ctx.moveTo(PAD.left,yOf(sg)); ctx.lineTo(W-PAD.right,yOf(sg)); ctx.stroke();
+  });
+
+  /* Band boundary lines */
+  ctx.strokeStyle='rgba(0,0,0,0.12)'; ctx.lineWidth=0.8;
+  [p80,p60,p40,p20].forEach(arr=>{
+    ctx.beginPath();
+    ages.forEach((a,i)=> i===0 ? ctx.moveTo(xOf(a),yOf(arr[i])) : ctx.lineTo(xOf(a),yOf(arr[i])));
+    ctx.stroke();
+  });
+
+  /* Median dashed line */
+  ctx.strokeStyle='rgba(0,0,0,0.18)'; ctx.lineWidth=1; ctx.setLineDash([5,4]);
+  ctx.beginPath();
+  ages.forEach((a,i)=> i===0 ? ctx.moveTo(xOf(a),yOf(p50[i])) : ctx.lineTo(xOf(a),yOf(p50[i])));
+  ctx.stroke(); ctx.setLineDash([]);
+
+  /* ── Band labels i tried drawing it INSIDE right padding area ── */
+  const labelX = W - PAD.right + 6;
+  const bandDefs = [
+    {label:'Good',         topArr:top, botArr:p80, colour:'#2A5C2F'},
+    {label:'Above avg',    topArr:p80, botArr:p60, colour:'#1F4070'},
+    {label:'Average',      topArr:p60, botArr:p40, colour:'#3A4560'},
+    {label:'Below avg',    topArr:p40, botArr:p20, colour:'#7A4510'},
+    {label:'Low',          topArr:p20, botArr:bot, colour:'#8B1A2A'},
+  ];
+  /*  for label y position */
+  const labelAgeIdx = ages.indexOf(79);
+  ctx.font='bold 10px system-ui,sans-serif';
+  bandDefs.forEach(bd=>{
+    const midSGMA = (Math.min(SG_MAX,bd.topArr[labelAgeIdx]) + Math.max(SG_MIN,bd.botArr[labelAgeIdx])) / 2;
+    const ly = yOf(midSGMA);
+    /* Only draw if there's enough vertical room */
+    const bandH = Math.abs(yOf(bd.botArr[labelAgeIdx]) - yOf(Math.min(SG_MAX,bd.topArr[labelAgeIdx])));
+    if(bandH > 10) {
+      ctx.fillStyle = bd.colour;
+      ctx.textAlign = 'left';
+      ctx.fillText(bd.label, labelX, ly + 4);
+    }
+  });
+
+  /* Y-axis labels */
+  ctx.fillStyle='#9499A6'; ctx.font='11px system-ui,sans-serif'; ctx.textAlign='right';
+  [60,80,100,120,140].forEach(sg=> ctx.fillText(sg, PAD.left-6, yOf(sg)+4));
+
+  /* Y-axis title */
+  ctx.save(); ctx.translate(13, H/2); ctx.rotate(-Math.PI/2);
+  ctx.textAlign='center'; ctx.font='10px system-ui,sans-serif'; ctx.fillStyle='#9499A6';
+  ctx.fillText('SGMA Score', 0, 0); ctx.restore();
+
+  /* X-axis labels */
+  ctx.textAlign='center'; ctx.fillStyle='#9499A6'; ctx.font='11px system-ui,sans-serif';
+  [20,30,40,50,60,70,80].forEach(a=> ctx.fillText(a, xOf(a), H-12));
+  ctx.fillText('Age (years)', PAD.left + plotW/2, H-4);
+
+  /* Patient dot */
+  const patX  = xOf(PATIENT.age);
+  const patY  = yOf(sofToSGMA(PATIENT.observedSoF));
+  ctx.beginPath(); ctx.arc(patX, patY, 10, 0, Math.PI*2);
+  ctx.fillStyle='rgba(190,10,30,0.12)'; ctx.fill();
+  ctx.beginPath(); ctx.arc(patX, patY, 6, 0, Math.PI*2);
+  ctx.fillStyle='#BE0A1E'; ctx.fill();
+  ctx.strokeStyle='#fff'; ctx.lineWidth=2.5; ctx.stroke();
+  ctx.textAlign='center'; ctx.font='bold 11px system-ui,sans-serif'; ctx.fillStyle='#1A2340';
+  ctx.fillText(SELECTED_PATIENT.name.split(' ')[0]+' \xb7 '+Math.round(sofToSGMA(PATIENT.observedSoF)), patX, patY-14);
+}
+
+/* ══════════════════════════════════════════════════════════
+   LONGITUDINAL CHART — Section 3
+   ══════════════════════════════════════════════════════════ */
+function drawTrajPlot(off) {
+  const canvas = document.getElementById('trajPlot');
+  const DPR = window.devicePixelRatio || 1;
+  canvas.width  = canvas.offsetWidth * DPR;
+  canvas.height = 240 * DPR;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(DPR, DPR);
+  const W = canvas.offsetWidth, H = 240;
+
+  const sgmaVals = SESSIONS.map(s=>sofToSGMA(s.sof));
+  const PAD = {top:20, right:90, bottom:38, left:52};
+  const plotW = W - PAD.left - PAD.right;
+  const plotH = H - PAD.top  - PAD.bottom;
+  const SG_MIN=40, SG_MAX=140, N=SESSIONS.length;
+
+  function xOf(i)    { return PAD.left + (i/(N-1))*plotW; }
+  function yOf(sgma) { return PAD.top  + (1-(Math.min(SG_MAX,Math.max(SG_MIN,sgma))-SG_MIN)/(SG_MAX-SG_MIN))*plotH; }
+
+  /* Band boundaries at patient's age */
+  const bSGMA = {
+    p80: sofToSGMA(sofAtPercentile(PATIENT.age,0.80,off)),
+    p60: sofToSGMA(sofAtPercentile(PATIENT.age,0.60,off)),
+    p40: sofToSGMA(sofAtPercentile(PATIENT.age,0.40,off)),
+    p20: sofToSGMA(sofAtPercentile(PATIENT.age,0.20,off)),
+  };
+
+  function fillHBand(t,b,col) {
+    const ty=yOf(t), by=yOf(b);
+    ctx.fillStyle=col;
+    ctx.fillRect(PAD.left, ty, plotW, by-ty);
+  }
+  fillHBand(SG_MAX,   bSGMA.p80, '#D6EAD8');
+  fillHBand(bSGMA.p80,bSGMA.p60, '#DEE9F5');
+  fillHBand(bSGMA.p60,bSGMA.p40, '#E8EDF4');
+  fillHBand(bSGMA.p40,bSGMA.p20, '#F5E8D6');
+  fillHBand(bSGMA.p20,SG_MIN,    '#F5D6D9');
+
+  /* Gridlines */
+  ctx.strokeStyle='rgba(0,0,0,0.05)'; ctx.lineWidth=1;
+  [60,80,100,120].forEach(sg=>{
+    ctx.beginPath(); ctx.moveTo(PAD.left,yOf(sg)); ctx.lineTo(W-PAD.right,yOf(sg)); ctx.stroke();
+  });
+
+  /* Band boundary lines */
+  ctx.strokeStyle='rgba(0,0,0,0.12)'; ctx.lineWidth=0.8;
+  [bSGMA.p80,bSGMA.p60,bSGMA.p40,bSGMA.p20].forEach(sg=>{
+    ctx.beginPath(); ctx.moveTo(PAD.left,yOf(sg)); ctx.lineTo(W-PAD.right,yOf(sg)); ctx.stroke();
+  });
+
+  /* ── Band labels inside right padding ── */
+  const labelX = W - PAD.right + 6;
+  const tBands = [
+    {label:'Good',      top:SG_MAX,    bot:bSGMA.p80, colour:'#2A5C2F'},
+    {label:'Above avg', top:bSGMA.p80, bot:bSGMA.p60, colour:'#1F4070'},
+    {label:'Average',   top:bSGMA.p60, bot:bSGMA.p40, colour:'#3A4560'},
+    {label:'Below avg', top:bSGMA.p40, bot:bSGMA.p20, colour:'#7A4510'},
+    {label:'Low',       top:bSGMA.p20, bot:SG_MIN,    colour:'#8B1A2A'},
+  ];
+  ctx.font='bold 10px system-ui,sans-serif'; ctx.textAlign='left';
+  tBands.forEach(bd=>{
+    const midY = (yOf(bd.top)+yOf(bd.bot))/2;
+    const bandH = Math.abs(yOf(bd.bot)-yOf(bd.top));
+    if(bandH > 10) {
+      ctx.fillStyle = bd.colour;
+      ctx.fillText(bd.label, labelX, midY+4);
+    }
+  });
+
+  /* Y-axis labels */
+  ctx.textAlign='right'; ctx.font='11px system-ui,sans-serif'; ctx.fillStyle='#9499A6';
+  [60,80,100,120].forEach(sg=> ctx.fillText(sg, PAD.left-6, yOf(sg)+4));
+
+  /* Y-axis title */
+  ctx.save(); ctx.translate(13, H/2); ctx.rotate(-Math.PI/2);
+  ctx.textAlign='center'; ctx.font='10px system-ui,sans-serif'; ctx.fillStyle='#9499A6';
+  ctx.fillText('SGMA Score', 0, 0); ctx.restore();
+
+  /* Score line */
+  ctx.beginPath();
+  sgmaVals.forEach((sg,i)=> i===0 ? ctx.moveTo(xOf(i),yOf(sg)) : ctx.lineTo(xOf(i),yOf(sg)));
+  ctx.strokeStyle='#BE0A1E'; ctx.lineWidth=2.5;
+  ctx.lineJoin='round'; ctx.lineCap='round'; ctx.stroke();
+
+  /* Dots */
+  sgmaVals.forEach((sg,i)=>{
+    ctx.beginPath(); ctx.arc(xOf(i),yOf(sg),3.5,0,Math.PI*2);
+    ctx.fillStyle='#BE0A1E'; ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke();
+  });
+
+  /* Last point highlighted */
+  const lx=xOf(N-1), ly=yOf(sgmaVals[N-1]);
+  ctx.beginPath(); ctx.arc(lx,ly,6,0,Math.PI*2);
+  ctx.fillStyle='#BE0A1E'; ctx.fill();
+  ctx.strokeStyle='#fff'; ctx.lineWidth=2.5; ctx.stroke();
+  ctx.textAlign='center'; ctx.font='bold 11px system-ui,sans-serif'; ctx.fillStyle='#1A2340';
+  ctx.fillText(Math.round(sgmaVals[N-1]), lx, ly-12);
+
+  /* X-axis month ticks */
+  const monthMap=SESSIONS.map((session, i) => {
+    const month = session.label.split(' ')[0];
+    return i === 0 || month !== SESSIONS[i - 1].label.split(' ')[0] ? month : '';
+  });
+  ctx.textAlign='center'; ctx.font='10px system-ui,sans-serif'; ctx.fillStyle='#9499A6';
+  SESSIONS.forEach((_,i)=>{ if(monthMap[i]) ctx.fillText(monthMap[i], xOf(i), H-4); });
+}
+
+/* Boot */
+window.addEventListener('load', ()=> { renderProfileShell(); redrawCharts(); });
+window.addEventListener('resize', ()=> redrawCharts());
+</script>
+</body>
+</html>

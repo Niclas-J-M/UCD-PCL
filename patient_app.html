@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MemoryLab — Patient App</title>
+<style>
+  :root {
+    --red: #BE0A1E;
+    --navy: #1A2340;
+    --bg: #EEEFF2;
+    --screen-bg: #FBFBFC;
+    --card: #FFFFFF;
+    --border: #E6E7EC;
+    --text: #1F2433;
+    --text-soft: #6B7080;
+    --text-faint: #9499A6;
+    --accent-soft: #FBEBED;
+    --calm: #4A6FA5;
+    --calm-soft: #EAF0F7;
+    --warm: #E8EDF4;
+    --shadow-phone: 0 24px 60px rgba(26,35,64,0.22), 0 6px 18px rgba(26,35,64,0.12);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', 'Helvetica Neue', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    padding: 44px 20px;
+  }
+
+  /* layout: row of phones */
+  .phone-row {
+    display: flex;
+    gap: 36px;
+    justify-content: center;
+    flex-wrap: wrap;
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+  .phone-block { display: flex; flex-direction: column; align-items: center; }
+  .screen-caption {
+    margin-bottom: 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--navy);
+    text-align: center;
+  }
+  .screen-caption span {
+    display: block;
+    font-weight: 400;
+    font-size: 11.5px;
+    color: var(--text-faint);
+    margin-top: 2px;
+  }
+
+  /* ─── Phone frame ────────────────────────────────────────── */
+  .phone {
+    width: 300px;
+    height: 620px;
+    background: #000;
+    border-radius: 38px;
+    padding: 9px;
+    box-shadow: var(--shadow-phone);
+    flex-shrink: 0;
+  }
+  .screen {
+    width: 100%;
+    height: 100%;
+    background: var(--screen-bg);
+    border-radius: 30px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+  /* status bar */
+  .status-bar {
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--navy);
+    flex-shrink: 0;
+  }
+  .status-bar .dots { letter-spacing: 1px; }
+
+  /* app header */
+  .app-header {
+    padding: 6px 20px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .app-logo {
+    width: 22px; height: 22px;
+    background: var(--red);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 800; font-size: 12px;
+  }
+  .app-name { font-weight: 700; font-size: 14px; color: var(--navy); }
+
+  /* screen body */
+  .screen-body {
+    flex: 1;
+    padding: 6px 22px 16px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ─── SCREEN 1: Welcome / onboarding ─────────────────────── */
+  .welcome-illo {
+    margin: 18px auto 22px;
+    width: 130px; height: 130px;
+  }
+  .onboard-title {
+    font-size: 21px;
+    font-weight: 700;
+    color: var(--navy);
+    text-align: center;
+    line-height: 1.3;
+    margin-bottom: 12px;
+  }
+  .onboard-text {
+    font-size: 14px;
+    color: var(--text-soft);
+    text-align: center;
+    line-height: 1.6;
+    margin-bottom: 6px;
+  }
+  .onboard-text b { color: var(--text); }
+  .dots-row {
+    display: flex; gap: 7px; justify-content: center;
+    margin: 22px 0 18px;
+  }
+  .dots-row .d {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--border);
+  }
+  .dots-row .d.on { background: var(--red); width: 20px; border-radius: 4px; }
+  .spacer { flex: 1; }
+  .btn-big {
+    width: 100%;
+    background: var(--red);
+    color: #fff;
+    border: none;
+    padding: 15px;
+    border-radius: 13px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .btn-text {
+    width: 100%;
+    background: transparent;
+    color: var(--text-faint);
+    border: none;
+    padding: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+
+  /* ─── SCREEN 2: Practice test ────────────────────────────── */
+  .practice-badge {
+    align-self: center;
+    background: var(--calm-soft);
+    color: var(--calm);
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+    letter-spacing: 0.3px;
+  }
+  .practice-prompt {
+    font-size: 13px;
+    color: var(--text-soft);
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  .practice-word {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--navy);
+    text-align: center;
+    margin-bottom: 26px;
+  }
+  .answer-card {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 13px;
+    padding: 15px 16px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .answer-card:hover { border-color: var(--calm); }
+  .answer-card.selected {
+    border-color: var(--calm);
+    background: var(--calm-soft);
+    color: var(--calm);
+  }
+  .practice-hint {
+    background: var(--warm);
+    border-radius: 11px;
+    padding: 12px 14px;
+    font-size: 12.5px;
+    color: var(--text-soft);
+    line-height: 1.5;
+    text-align: center;
+    margin-top: 8px;
+  }
+  .practice-hint b { color: var(--navy); }
+  .progress-line {
+    height: 5px;
+    background: var(--border);
+    border-radius: 3px;
+    margin-bottom: 18px;
+    overflow: hidden;
+  }
+  .progress-line .fill {
+    height: 100%;
+    background: var(--calm);
+    border-radius: 3px;
+  }
+
+  /* ─── SCREEN 3: Results ──────────────────────────────────── */
+  .result-greeting {
+    font-size: 16px;
+    color: var(--text-soft);
+    margin-bottom: 2px;
+  }
+  .result-greeting b { color: var(--navy); font-weight: 700; }
+  .result-done {
+    font-size: 12.5px;
+    color: var(--text-faint);
+    margin-bottom: 14px;
+  }
+  .result-hero {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px 18px;
+    text-align: center;
+    margin-bottom: 11px;
+  }
+  .result-hero .label {
+    font-size: 12px;
+    color: var(--text-soft);
+    font-weight: 600;
+    margin-bottom: 14px;
+  }
+  /* simple positional scale - no numbers, no red/green */
+  .scale-track {
+    height: 12px;
+    border-radius: 6px;
+    background: linear-gradient(90deg, #DDE3EC 0%, #C9D2DF 100%);
+    position: relative;
+    margin: 0 4px 8px;
+  }
+  .scale-track .your-dot {
+    position: absolute;
+    top: 50%;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--calm);
+    border: 4px solid #fff;
+    box-shadow: 0 0 0 1.5px var(--calm), 0 3px 8px rgba(26,35,64,0.2);
+    transform: translate(-50%, -50%);
+  }
+  .scale-ends {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-faint);
+    margin: 0 2px;
+  }
+  .result-statement {
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.5;
+    margin-top: 13px;
+    font-weight: 600;
+  }
+  .result-statement .hl { color: var(--calm); }
+  .info-card {
+    background: var(--calm-soft);
+    border-radius: 13px;
+    padding: 12px 14px;
+    margin-bottom: 11px;
+    display: flex;
+    gap: 11px;
+    align-items: flex-start;
+  }
+  .info-card .ic-icon {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: var(--calm);
+    color: #fff;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700;
+  }
+  .info-card .ic-text {
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.45;
+  }
+  .info-card .ic-text b { color: var(--navy); }
+  .next-session {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 11px;
+  }
+  .next-cal {
+    width: 42px; height: 42px;
+    border-radius: 10px;
+    background: var(--navy);
+    color: #fff;
+    flex-shrink: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    line-height: 1;
+  }
+  .next-cal .nc-day { font-size: 16px; font-weight: 700; }
+  .next-cal .nc-mon { font-size: 8.5px; text-transform: uppercase; letter-spacing: .5px; margin-top: 2px; }
+  .next-info .ni-label { font-size: 11.5px; color: var(--text-faint); }
+  .next-info .ni-main { font-size: 13.5px; font-weight: 700; color: var(--navy); margin-top: 1px; }
+  .ask-btn {
+    width: 100%;
+    background: #fff;
+    border: 1.5px solid var(--border);
+    color: var(--navy);
+    padding: 13px;
+    border-radius: 13px;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.15s;
+  }
+  .ask-btn:hover { background: var(--screen-bg); border-color: var(--text-faint); }
+</style>
+</head>
+<body>
+
+<div class="phone-row">
+
+  <!-- ════════════════ SCREEN 1: WELCOME / ONBOARDING ════════════════ -->
+  <div class="phone-block">
+    <div class="screen-caption">
+      1 — Welcome
+      <span>First time opening the app</span>
+    </div>
+    <div class="phone">
+      <div class="screen">
+        <div class="status-bar">
+          <span>9:41</span>
+          <span class="dots">&#9679;&#9679;&#9679; &#128246;</span>
+        </div>
+        <div class="app-header">
+          <div class="app-logo">M</div>
+          <div class="app-name">MemoryLab</div>
+        </div>
+        <div class="screen-body">
+
+          <!-- friendly illustration -->
+          <svg class="welcome-illo" viewBox="0 0 130 130">
+            <circle cx="65" cy="65" r="62" fill="#EAF0F7"/>
+            <circle cx="65" cy="65" r="44" fill="#fff"/>
+            <!-- simple memory/brain-ish motif: dots connected -->
+            <circle cx="50" cy="52" r="6" fill="#4A6FA5"/>
+            <circle cx="82" cy="48" r="6" fill="#4A6FA5"/>
+            <circle cx="78" cy="80" r="6" fill="#BE0A1E"/>
+            <circle cx="46" cy="78" r="6" fill="#4A6FA5"/>
+            <line x1="50" y1="52" x2="82" y2="48" stroke="#C9D2DF" stroke-width="2.5"/>
+            <line x1="82" y1="48" x2="78" y2="80" stroke="#C9D2DF" stroke-width="2.5"/>
+            <line x1="78" y1="80" x2="46" y2="78" stroke="#C9D2DF" stroke-width="2.5"/>
+            <line x1="46" y1="78" x2="50" y2="52" stroke="#C9D2DF" stroke-width="2.5"/>
+            <line x1="50" y1="52" x2="78" y2="80" stroke="#C9D2DF" stroke-width="2.5"/>
+          </svg>
+
+          <div class="onboard-title">Welcome to<br>your memory check-in</div>
+          <div class="onboard-text">
+            This is a short <b>memory game</b> you do from home.
+            It takes about <b>8 minutes</b>, and your doctor uses
+            it to follow how your memory is doing over time.
+          </div>
+
+          <div class="spacer"></div>
+
+          <div class="dots-row">
+            <div class="d on"></div>
+            <div class="d"></div>
+            <div class="d"></div>
+          </div>
+
+          <button class="btn-big">Get started</button>
+          <button class="btn-text">My doctor will explain later</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════ SCREEN 2: PRACTICE TEST ════════════════ -->
+  <div class="phone-block">
+    <div class="screen-caption">
+      2 — Quick practice
+      <span>1-minute warm-up before the real test</span>
+    </div>
+    <div class="phone">
+      <div class="screen">
+        <div class="status-bar">
+          <span>9:42</span>
+          <span class="dots">&#9679;&#9679;&#9679; &#128246;</span>
+        </div>
+        <div class="app-header">
+          <div class="app-logo">M</div>
+          <div class="app-name">MemoryLab</div>
+        </div>
+        <div class="screen-body">
+
+          <div class="practice-badge">PRACTICE ROUND &middot; NOT SCORED</div>
+
+          <div class="progress-line">
+            <div class="fill" style="width:55%;"></div>
+          </div>
+
+          <div class="practice-prompt">Which word did you learn with this one?</div>
+          <div class="practice-word">House</div>
+
+          <div class="answer-card">Garden</div>
+          <div class="answer-card selected">Huis</div>
+          <div class="answer-card">Street</div>
+
+          <div class="spacer"></div>
+
+          <div class="practice-hint">
+            <b>No need to worry.</b> This short practice just helps you
+            get used to how the game works. The real test comes next.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════ SCREEN 3: RESULTS ════════════════ -->
+  <div class="phone-block">
+    <div class="screen-caption">
+      3 — Your results
+      <span>Shown after a session (self-care mode)</span>
+    </div>
+    <div class="phone">
+      <div class="screen">
+        <div class="status-bar">
+          <span>9:53</span>
+          <span class="dots">&#9679;&#9679;&#9679; &#128246;</span>
+        </div>
+        <div class="app-header">
+          <div class="app-logo">M</div>
+          <div class="app-name">MemoryLab</div>
+        </div>
+        <div class="screen-body">
+
+          <div class="result-greeting">Well done, <b>Anna</b></div>
+          <div class="result-done">You finished today's session &middot; 14 May</div>
+
+          <!-- hero result: positional, no number, no red/green -->
+          <div class="result-hero">
+            <div class="label">Your memory result today</div>
+            <div class="scale-track">
+              <div class="your-dot" style="left:62%;"></div>
+            </div>
+            <div class="scale-ends">
+              <span>Typical for your age</span>
+              <span>Worth a closer look</span>
+            </div>
+            <div class="result-statement">
+              Your result today are <span class="hl">completed and sent to</span>
+              your doctor.
+            </div>
+          </div>
+
+          <!-- reassuring explanation -->
+          <div class="info-card">
+            <div class="ic-icon">i</div>
+            <div class="ic-text">
+              <b>This is not a diagnosis.</b> One session only shows a snapshot.
+              Your doctor looks at the whole picture over time.
+            </div>
+          </div>
+
+          <!-- next session reminder -->
+          <div class="next-session">
+            <div class="next-cal">
+              <div class="nc-day">21</div>
+              <div class="nc-mon">May</div>
+            </div>
+            <div class="next-info">
+              <div class="ni-label">Your next check-in</div>
+              <div class="ni-main">Wednesday at 10:00</div>
+            </div>
+          </div>
+
+          <!-- ask GP a question -->
+          <button class="ask-btn">
+            <span style="font-size:15px;">&#9998;</span>
+            Ask your doctor a question
+          </button>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

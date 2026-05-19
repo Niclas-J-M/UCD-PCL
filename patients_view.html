@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MemoryLab — Patient Results View</title>
+<style>
+  :root {
+    --red: #BE0A1E;
+    --navy: #1A2340;
+    --bg: #EEF1F5;
+    --card: #FFFFFF;
+    --border: #E4E7EC;
+    --text: #283044;
+    --text-soft: #5D6475;
+    --text-faint: #939AA8;
+    --calm: #4A6FA5;
+    --calm-soft: #EAF0F7;
+    --calm-mid: #D4E0EE;
+    --warm-soft: #F3EEE7;
+    --sage: #4F7A6A;
+    --sage-soft: #E9F1ED;
+    --shadow: 0 2px 10px rgba(26,35,64,0.06);
+    --shadow-lg: 0 10px 40px rgba(26,35,64,0.10);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', 'Helvetica Neue', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ─── Slim "presentation mode" bar (for the GP) ──────────── */
+  .present-bar {
+    background: var(--navy);
+    color: #fff;
+    height: 46px;
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    gap: 14px;
+    flex-shrink: 0;
+  }
+  .present-bar .mode-tag {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    background: rgba(255,255,255,0.14);
+    padding: 4px 10px;
+    border-radius: 5px;
+  }
+  .present-bar .mode-note {
+    font-size: 12.5px;
+    color: #AEB4C6;
+  }
+  .present-bar .back-btn {
+    margin-left: auto;
+    background: rgba(255,255,255,0.10);
+    border: 1px solid rgba(255,255,255,0.18);
+    color: #fff;
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 7px 14px;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .present-bar .back-btn:hover { background: rgba(255,255,255,0.18); }
+
+  /* ─── Stage ──────────────────────────────────────────────── */
+  .stage {
+    flex: 1;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 36px 24px 48px;
+  }
+  .sheet {
+    width: 100%;
+    max-width: 760px;
+    background: var(--card);
+    border-radius: 20px;
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+  }
+
+  /* ─── Sheet header ───────────────────────────────────────── */
+  .sheet-head {
+    background: linear-gradient(135deg, #1A2340 0%, #2B3658 100%);
+    color: #fff;
+    padding: 30px 40px 28px;
+    position: relative;
+  }
+  .sheet-head .logo-mini {
+    display: flex; align-items: center; gap: 7px;
+    font-size: 12.5px; font-weight: 600;
+    color: #B9BECE;
+    margin-bottom: 18px;
+  }
+  .sheet-head .logo-mini .mk {
+    width: 18px; height: 18px; background: var(--red);
+    border-radius: 5px; display: flex; align-items: center;
+    justify-content: center; font-size: 10px; font-weight: 800; color: #fff;
+  }
+  .sheet-head h1 {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    margin-bottom: 6px;
+  }
+  .sheet-head .subtitle {
+    font-size: 14.5px;
+    color: #C5CAD8;
+    line-height: 1.5;
+  }
+
+  /* ─── Sheet body ─────────────────────────────────────────── */
+  .sheet-body { padding: 32px 40px 38px; }
+
+  .section { margin-bottom: 30px; }
+  .section:last-child { margin-bottom: 0; }
+  .section-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--calm);
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    margin-bottom: 14px;
+  }
+
+  /* ── Trajectory chart ── */
+  .chart-card {
+    background: #FBFCFD;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 24px 18px;
+  }
+  .chart-card . cc-intro { }
+  .chart-svg {
+    width: 100%;
+    height: 210px;
+    display: block;
+    margin-bottom: 6px;
+  }
+  .chart-foot {
+    display: flex;
+    gap: 24px;
+    font-size: 12.5px;
+    color: var(--text-soft);
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+  .chart-foot .item { display: flex; align-items: center; gap: 7px; }
+  .chart-foot .ln {
+    width: 22px; height: 3px; border-radius: 2px; background: var(--calm);
+  }
+  .chart-foot .bd {
+    width: 22px; height: 12px; border-radius: 3px; background: var(--calm-mid);
+  }
+
+  /* ── Plain-language summary ── */
+  .summary-statement {
+    background: var(--calm-soft);
+    border-radius: 14px;
+    padding: 22px 26px;
+    font-size: 17px;
+    line-height: 1.6;
+    color: var(--navy);
+    font-weight: 600;
+  }
+  .summary-statement .accent { color: var(--calm); }
+
+  /* ── What this means: two cards ── */
+  .means-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .means-card {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 22px;
+  }
+  .means-card .mc-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 700;
+    margin-bottom: 13px;
+  }
+  .means-card.q1 .mc-icon { background: var(--calm-soft); color: var(--calm); }
+  .means-card.q2 .mc-icon { background: var(--sage-soft); color: var(--sage); }
+  .means-card .mc-q {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 8px;
+  }
+  .means-card .mc-a {
+    font-size: 13.5px;
+    color: var(--text-soft);
+    line-height: 1.6;
+  }
+  .means-card .mc-a b { color: var(--text); }
+  .means-card ul {
+    list-style: none;
+    margin-top: 8px;
+  }
+  .means-card ul li {
+    font-size: 13.5px;
+    color: var(--text-soft);
+    line-height: 1.7;
+    padding-left: 18px;
+    position: relative;
+  }
+  .means-card ul li::before {
+    content: '';
+    position: absolute;
+    left: 2px; top: 9px;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--sage);
+  }
+
+  /* ── Next steps ── */
+  .next-card {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: var(--warm-soft);
+    border-radius: 14px;
+    padding: 20px 24px;
+  }
+  .next-cal {
+    width: 56px; height: 56px;
+    background: var(--navy);
+    color: #fff;
+    border-radius: 12px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+  .next-cal . d { font-size: 22px; font-weight: 700; }
+  .next-cal .m {
+    font-size: 9.5px; text-transform: uppercase;
+    letter-spacing: 0.6px; margin-top: 3px;
+  }
+  .next-text { flex: 1; }
+  .next-text .nt-title {
+    font-size: 15px; font-weight: 700; color: var(--navy);
+    margin-bottom: 3px;
+  }
+  .next-text .nt-sub {
+    font-size: 13.5px; color: var(--text-soft); line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+
+<!-- ─── Presentation-mode bar (only the GP notices this) ────── -->
+<div class="present-bar">
+  <span class="mode-tag">PATIENT VIEW</span>
+  <span class="mode-note">This is what your patient sees — simplified, no clinical detail</span>
+  <button class="back-btn" onclick="window.location.href='patient_profile.html'">&larr; Back to clinical view</button>
+</div>
+
+<!-- ─── Stage ───────────────────────────────────────────────── -->
+<div class="stage">
+  <div class="sheet">
+
+    <!-- Header -->
+    <div class="sheet-head">
+      <div class="logo-mini">
+        <div class="mk">M</div> MemoryLab
+      </div>
+      <h1>How your memory check-ins are going, Anna</h1>
+      <div class="subtitle">
+        A look at your sessions together with Dr. Visser &middot; 14 May 2026
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="sheet-body">
+
+      <!-- SECTION 1: trajectory over time -->
+      <div class="section">
+        <div class="section-label">Your memory over time</div>
+        <div class="chart-card">
+          <svg class="chart-svg" viewBox="0 0 680 210" preserveAspectRatio="none">
+            <!-- typical-range band -->
+            <rect x="50" y="58" width="600" height="74" fill="#D4E0EE" opacity="0.7"/>
+            <!-- soft gridlines -->
+            <line x1="50" y1="40"  x2="650" y2="40"  stroke="#EDEFF3" stroke-width="1"/>
+            <line x1="50" y1="95"  x2="650" y2="95"  stroke="#EDEFF3" stroke-width="1"/>
+            <line x1="50" y1="150" x2="650" y2="150" stroke="#EDEFF3" stroke-width="1"/>
+            <line x1="50" y1="175" x2="650" y2="175" stroke="#E4E7EC" stroke-width="1.5"/>
+
+            <!-- friendly y labels (no numbers) -->
+            <text x="42" y="52"  font-size="11" fill="#939AA8" text-anchor="end">Faster</text>
+            <text x="42" y="178" font-size="11" fill="#939AA8" text-anchor="end">Slower</text>
+
+            <!-- band label -->
+            <text x="60" y="52" font-size="11" fill="#4A6FA5" font-weight="600">Usual range for your age</text>
+
+            <!-- patient line - gentle upward drift -->
+            <polyline
+              points="80,150 165,148 250,142 335,138 420,128 505,118 590,104"
+              fill="none" stroke="#4A6FA5" stroke-width="3"
+              stroke-linejoin="round" stroke-linecap="round"/>
+            <!-- data points -->
+            <g fill="#4A6FA5">
+              <circle cx="80"  cy="150" r="4.5"/>
+              <circle cx="165" cy="148" r="4.5"/>
+              <circle cx="250" cy="142" r="4.5"/>
+              <circle cx="335" cy="138" r="4.5"/>
+              <circle cx="420" cy="128" r="4.5"/>
+              <circle cx="505" cy="118" r="4.5"/>
+            </g>
+            <!-- latest point highlighted -->
+            <circle cx="590" cy="104" r="7" fill="#4A6FA5" stroke="#fff" stroke-width="3"/>
+            <text x="590" y="90" font-size="11.5" fill="#1A2340" font-weight="700" text-anchor="middle">Today</text>
+
+            <!-- x labels -->
+            <text x="80"  y="198" font-size="11" fill="#939AA8" text-anchor="middle">January</text>
+            <text x="250" y="198" font-size="11" fill="#939AA8" text-anchor="middle">February</text>
+            <text x="420" y="198" font-size="11" fill="#939AA8" text-anchor="middle">March / April</text>
+            <text x="590" y="198" font-size="11" fill="#939AA8" text-anchor="middle">May</text>
+          </svg>
+          <div class="chart-foot">
+            <div class="item"><span class="ln"></span> Your results, session by session</div>
+            <div class="item"><span class="bd"></span> What's usual for your age group</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 2: plain-language summary -->
+      <div class="section">
+        <div class="summary-statement">
+          Your memory results have stayed fairly steady, with a
+          <span class="accent">small, gradual change</span> over the last few months.
+          This is something Dr. Visser wants to <span class="accent">keep an eye on together with you</span> —
+          it is not a cause for alarm.
+        </div>
+      </div>
+
+      <!-- SECTION 3: the two questions every patient asks -->
+      <div class="section">
+        <div class="section-label">What this means</div>
+        <div class="means-grid">
+
+          <div class="means-card q1">
+            <div class="mc-icon">?</div>
+            <div class="mc-q">Does this mean I have dementia?</div>
+            <div class="mc-a">
+              <b>No.</b> This check-in is not a diagnosis. It is a simple way for your
+              doctor to follow how your memory is doing over time, so anything worth
+              looking at is noticed early.
+            </div>
+          </div>
+
+          <div class="means-card q2">
+            <div class="mc-icon">&#10003;</div>
+            <div class="mc-q">What can I do?</div>
+            <div class="mc-a">A few everyday things support memory health:</div>
+            <ul>
+              <li>Staying socially and mentally active</li>
+              <li>Regular movement and good sleep</li>
+              <li>Keeping up your weekly check-ins</li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- SECTION 4: what happens next -->
+      <div class="section">
+        <div class="section-label">What happens next</div>
+        <div class="next-card">
+          <div class="next-cal">
+            <div class="d">21</div>
+            <div class="m">May</div>
+          </div>
+          <div class="next-text">
+            <div class="nt-title">Your next check-in is on Wednesday 21 May</div>
+            <div class="nt-sub">
+              Dr. Visser will keep following your results with you. If anything
+              changes or you have questions before then, you can reach out any time.
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

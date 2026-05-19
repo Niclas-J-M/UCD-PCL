@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MemoryLab — Schedule</title>
+<style>
+:root {
+  --red:#BE0A1E; --navy:#1A2340; --navy-soft:#2C3658;
+  --bg:#F4F5F7; --card:#FFFFFF; --border:#E2E4E9;
+  --text:#1F2433; --text-soft:#6B7080; --text-faint:#9499A6;
+  --shadow:0 1px 3px rgba(26,35,64,.07),0 1px 2px rgba(26,35,64,.04);
+  --shadow-lg:0 8px 28px rgba(26,35,64,.12);
+  /* patient colours — 6 distinct, accessible, non-red/green */
+  --p0:#4A6FA5; --p1:#7B5EA7; --p2:#2E8B72; --p3:#C17D2A; --p4:#3D7FB5; --p5:#8B5A6E;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI','Helvetica Neue',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+
+/* ── topbar ── */
+.topbar{background:var(--navy);color:#fff;height:56px;display:flex;align-items:center;padding:0 28px;gap:32px;flex-shrink:0;}
+.logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:15px;}
+.logo-mark{width:24px;height:24px;background:var(--red);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;}
+.logo span{color:#B9BECE;font-weight:400;}
+.nav{display:flex;gap:4px;margin-left:12px;}
+.nav a{color:#B9BECE;text-decoration:none;padding:7px 14px;border-radius:6px;font-size:13px;transition:background .15s,color .15s;}
+.nav a:hover{color:#fff;background:var(--navy-soft);}
+.nav a.active{color:#fff;background:var(--navy-soft);font-weight:600;}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:18px;}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;}
+.cb-meta{line-height:1.25;}
+.cb-meta .name{font-weight:600;font-size:13px;}
+.cb-meta .role{color:#B9BECE;font-size:11.5px;}
+
+/* ── page shell ── */
+.page{max-width:1280px;margin:0 auto;padding:22px 28px 40px;}
+
+/* ── page header row ── */
+.sched-header{display:flex;align-items:center;gap:16px;margin-bottom:18px;flex-wrap:wrap;}
+.sched-header h1{font-size:22px;font-weight:700;color:var(--navy);letter-spacing:-.2px;margin-right:8px;}
+.nav-btn-group{display:flex;gap:4px;align-items:center;}
+.nav-btn{background:var(--card);border:1px solid var(--border);color:var(--text-soft);padding:7px 13px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;}
+.nav-btn:hover{background:var(--bg);color:var(--navy);}
+.nav-btn.today{color:var(--navy);}
+.month-label{font-size:15px;font-weight:700;color:var(--navy);min-width:130px;text-align:center;}
+.spacer{flex:1;}
+.view-tabs{display:flex;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:3px;}
+.view-tab{padding:6px 16px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;color:var(--text-soft);transition:all .15s;border:none;background:transparent;}
+.view-tab.active{background:var(--navy);color:#fff;}
+.add-btn{background:var(--red);color:#fff;border:none;padding:9px 18px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;transition:background .15s;}
+.add-btn:hover{background:#A50918;}
+
+/* ── filter bar ── */
+.filter-bar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+.filter-toggle{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--text-soft);padding:7px 13px;border:1px solid var(--border);border-radius:7px;background:var(--card);cursor:pointer;transition:all .15s;user-select:none;}
+.filter-toggle.on{color:var(--navy);border-color:var(--navy);background:#fff;}
+.filter-toggle .dot{width:8px;height:8px;border-radius:50%;background:var(--text-faint);}
+.filter-toggle.on .dot{background:var(--navy);}
+.filter-sep{width:1px;height:22px;background:var(--border);}
+.patient-filter-wrap{position:relative;}
+.patient-filter-btn{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--text-soft);padding:7px 13px;border:1px solid var(--border);border-radius:7px;background:var(--card);cursor:pointer;transition:all .15s;user-select:none;}
+.patient-filter-btn:hover{color:var(--navy);}
+.pf-badge{background:var(--navy);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;}
+.pf-dropdown{display:none;position:absolute;top:calc(100%+6px);left:0;background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-lg);width:230px;z-index:200;padding:6px;}
+.pf-dropdown.open{display:block;}
+.pf-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:7px;cursor:pointer;transition:background .12s;}
+.pf-item:hover{background:var(--bg);}
+.pf-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.pf-name{font-size:13px;font-weight:600;color:var(--text);flex:1;}
+.pf-check{width:16px;height:16px;border:1.5px solid var(--border);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;background:#fff;transition:all .12s;}
+.pf-item.selected .pf-check{background:var(--navy);border-color:var(--navy);}
+.legend-wrap{display:flex;align-items:center;gap:12px;margin-left:auto;flex-wrap:wrap;}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text-soft);}
+.legend-dot{width:10px;height:10px;border-radius:50%;}
+
+/* ── main grid ── */
+.cal-grid{display:grid;grid-template-columns:1fr 300px;gap:18px;align-items:start;}
+
+/* ── calendar panel ── */
+.cal-panel{background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);overflow:hidden;}
+
+/* MONTH VIEW */
+.month-grid-head{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--border);}
+.dow{padding:10px 0;text-align:center;font-size:11.5px;font-weight:700;color:var(--text-faint);text-transform:uppercase;letter-spacing:.4px;}
+.month-grid{display:grid;grid-template-columns:repeat(7,1fr);}
+.day-cell{border-right:1px solid var(--border);border-bottom:1px solid var(--border);min-height:100px;padding:8px 8px 6px;cursor:pointer;transition:background .12s;position:relative;}
+.day-cell:nth-child(7n){border-right:none;}
+.day-cell:hover{background:#FAFAFA;}
+.day-cell.other-month{background:#FAFBFC;}
+.day-cell.other-month .day-num{color:var(--text-faint);}
+.day-cell.today .day-num{background:var(--red);color:#fff;border-radius:50%;}
+.day-cell.selected{background:#F0F3F8;}
+.day-num{font-size:13px;font-weight:600;color:var(--navy);width:26px;height:26px;display:flex;align-items:center;justify-content:center;margin-bottom:5px;}
+.day-events{display:flex;flex-direction:column;gap:3px;}
+.event-pill{font-size:11px;font-weight:600;padding:2px 7px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;transition:opacity .12s;}
+.event-pill:hover{opacity:.8;}
+.event-pill.completed{opacity:.55;}
+.event-pill.overdue{background:transparent!important;border:1.5px dashed;}
+.event-pill.clinic{background:#EEF0F6;color:var(--navy-soft);}
+.more-pill{font-size:10.5px;color:var(--text-faint);padding:1px 4px;cursor:pointer;}
+.more-pill:hover{color:var(--navy);}
+
+/* WEEK VIEW */
+.week-view{display:none;}
+.week-head{display:grid;grid-template-columns:50px repeat(7,1fr);border-bottom:1px solid var(--border);}
+.week-head .wh-time{display:flex;align-items:center;justify-content:center;padding:10px 0;font-size:11px;color:var(--text-faint);}
+.week-head .wh-day{padding:10px 8px;text-align:center;}
+.wh-day .wd-name{font-size:11px;font-weight:700;color:var(--text-faint);text-transform:uppercase;letter-spacing:.4px;}
+.wh-day .wd-num{font-size:20px;font-weight:700;color:var(--navy);line-height:1.2;margin-top:2px;}
+.wh-day.today .wd-num{background:var(--red);color:#fff;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;margin:2px auto 0;}
+.week-body{display:grid;grid-template-columns:50px repeat(7,1fr);overflow-y:auto;min-height:660px;}
+.week-time-col{display:flex;flex-direction:column;}
+.time-slot-label{height:60px;display:flex;align-items:flex-start;justify-content:center;padding-top:3px;font-size:10.5px;color:var(--text-faint);border-right:1px solid var(--border);}
+.week-day-col{border-right:1px solid var(--border);position:relative;min-height:660px;}
+.week-day-col:last-child{border-right:none;}
+.week-slot{height:60px;min-height:60px;border-bottom:1px solid #F0F2F5;position:relative;cursor:pointer;transition:background .1s;}
+.week-slot:hover{background:#FAFBFD;}
+.week-event{position:absolute;left:3px;right:3px;border-radius:5px;padding:3px 7px;font-size:11.5px;font-weight:600;overflow:hidden;cursor:pointer;z-index:2;transition:opacity .12s;}
+.week-event:hover{opacity:.85;}
+.week-event .we-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.week-event .we-time{font-size:10px;font-weight:400;opacity:.8;}
+.week-event.clinic{background:#EEF0F6;color:var(--navy-soft);}
+
+/* ── side panel ── */
+.side-panel{display:flex;flex-direction:column;gap:18px;}
+.sp-card{background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);overflow:hidden;}
+.sp-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.sp-head h3{font-size:14px;font-weight:700;color:var(--navy);}
+.sp-head .sp-date{font-size:12px;color:var(--text-faint);}
+.agenda-empty{padding:24px 18px;text-align:center;color:var(--text-faint);font-size:13px;}
+.agenda-item{padding:12px 18px;border-bottom:1px solid #EEF0F3;display:flex;gap:12px;align-items:flex-start;cursor:pointer;transition:background .12s;}
+.agenda-item:last-child{border-bottom:none;}
+.agenda-item:hover{background:#FAFAFA;}
+.ai-color{width:3px;border-radius:2px;flex-shrink:0;align-self:stretch;}
+.ai-body{flex:1;min-width:0;}
+.ai-title{font-size:13px;font-weight:600;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ai-sub{font-size:11.5px;color:var(--text-soft);margin-top:2px;}
+.ai-time{font-size:11.5px;color:var(--text-faint);white-space:nowrap;margin-top:2px;}
+.ai-badge{font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:4px;margin-top:5px;display:inline-block;}
+
+/* patient detail card (shown in side panel on session click) */
+.pd-header{padding:16px 18px;background:linear-gradient(135deg,var(--navy) 0%,var(--navy-soft) 100%);color:#fff;}
+.pd-name{font-size:16px;font-weight:700;margin-bottom:6px;}
+.pd-tags{display:flex;gap:8px;flex-wrap:wrap;}
+.pd-tag{font-size:11.5px;background:rgba(255,255,255,.15);padding:3px 9px;border-radius:5px;}
+.pd-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);}
+.pd-metric{background:var(--card);padding:12px 14px;}
+.pd-metric .pm-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;font-weight:600;color:var(--text-faint);}
+.pd-metric .pm-val{font-size:17px;font-weight:700;color:var(--navy);margin-top:3px;}
+.pd-timeline{padding:12px 0;}
+.pd-sess{padding:9px 18px;border-bottom:1px solid #EEF0F3;display:flex;align-items:center;justify-content:space-between;font-size:12.5px;}
+.pd-sess:last-child{border-bottom:none;}
+.pd-sess .ps-date{color:var(--text-soft);}
+.pd-sess .ps-sgma{font-weight:700;color:var(--navy);}
+.pd-sess .ps-q{font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:4px;}
+.pd-sess .ps-q.good{background:#EAF2F0;color:#3B7D6E;}
+.pd-sess .ps-q.caution{background:#FBF1E3;color:#C77B30;}
+.pd-foot{padding:12px 18px;border-top:1px solid var(--border);}
+.btn-sm{width:100%;border:1px solid var(--border);background:#fff;color:var(--navy);padding:8px;border-radius:7px;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s;}
+.btn-sm:hover{background:var(--bg);}
+.btn-sm.primary{background:var(--navy);color:#fff;border-color:var(--navy);}
+.btn-sm.primary:hover{background:var(--navy-soft);}
+
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(26,35,64,.45);z-index:500;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--card);border-radius:14px;width:440px;box-shadow:var(--shadow-lg);overflow:hidden;}
+.modal-head{padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.modal-head h2{font-size:16px;font-weight:700;color:var(--navy);}
+.modal-close{width:28px;height:28px;border-radius:7px;border:1px solid var(--border);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--text-soft);transition:all .15s;}
+.modal-close:hover{background:var(--bg);}
+.modal-body{padding:20px 24px;}
+.type-tabs{display:flex;gap:10px;margin-bottom:20px;}
+.type-tab{flex:1;padding:11px;border:1.5px solid var(--border);border-radius:9px;text-align:center;cursor:pointer;transition:all .15s;}
+.type-tab .tt-icon{font-size:20px;margin-bottom:5px;}
+.type-tab .tt-label{font-size:12.5px;font-weight:600;color:var(--text-soft);}
+.type-tab.active{border-color:var(--navy);background:#F0F3F8;}
+.type-tab.active .tt-label{color:var(--navy);}
+.form-field{margin-bottom:16px;}
+.form-field label{display:block;font-size:12px;font-weight:600;color:var(--text-soft);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;}
+.form-field select,.form-field input,.form-field textarea{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;color:var(--text);outline:none;transition:border .15s;}
+.form-field select:focus,.form-field input:focus,.form-field textarea:focus{border-color:var(--navy);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.modal-foot{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;}
+.btn-cancel{background:#fff;border:1px solid var(--border);color:var(--text-soft);padding:9px 18px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;}
+.btn-cancel:hover{background:var(--bg);}
+.btn-save{background:var(--navy);color:#fff;border:none;padding:9px 22px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s;}
+.btn-save:hover{background:var(--navy-soft);}
+</style>
+</head>
+<body>
+
+<!-- topbar -->
+<div class="topbar">
+  <div class="logo"><div class="logo-mark">M</div>MemoryLab <span>&nbsp;Clinical</span></div>
+  <nav class="nav">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="patient_profile.html">Patients</a>
+    <a href="schedule.html" class="active">Schedule</a>
+  </nav>
+  <div class="topbar-right">
+    <div style="display:flex;align-items:center;gap:9px;">
+      <div class="avatar">EV</div>
+      <div class="cb-meta"><div class="name">Dr. E. Visser</div><div class="role">General Practitioner</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- page header -->
+  <div class="sched-header">
+    <h1>Schedule</h1>
+    <div class="nav-btn-group">
+      <button class="nav-btn" onclick="shiftMonth(-1)">&#8249;</button>
+      <button class="nav-btn today" onclick="goToday()">Today</button>
+      <button class="nav-btn" onclick="shiftMonth(1)">&#8250;</button>
+    </div>
+    <span class="month-label" id="monthLabel"></span>
+    <div class="spacer"></div>
+    <div class="view-tabs">
+      <button class="view-tab active" id="tabMonth" onclick="setView('month')">Month</button>
+      <button class="view-tab" id="tabWeek" onclick="setView('week')">Week</button>
+    </div>
+    <button class="add-btn" onclick="openModal()"><span style="font-size:16px;line-height:1;">+</span> Add event</button>
+  </div>
+
+  <!-- filter bar -->
+  <div class="filter-bar">
+    <div class="filter-toggle on" id="ftSessions" onclick="toggleFilter('sessions')">
+      <span class="dot"></span> Patient sessions
+    </div>
+    <div class="filter-toggle on" id="ftClinic" onclick="toggleFilter('clinic')">
+      <span class="dot"></span> My appointments
+    </div>
+    <div class="filter-sep"></div>
+    <div class="patient-filter-wrap">
+      <div class="patient-filter-btn" onclick="togglePFDropdown()">
+        &#x1F465; All patients <span class="pf-badge" id="pfBadge" style="display:none">0</span> &#9660;
+      </div>
+      <div class="pf-dropdown" id="pfDropdown">
+        <!-- filled by JS -->
+      </div>
+    </div>
+    <div class="legend-wrap" id="legendWrap"></div>
+  </div>
+
+  <!-- main cal + side panel -->
+  <div class="cal-grid">
+
+    <!-- calendar panel -->
+    <div class="cal-panel">
+      <!-- month view -->
+      <div id="monthView">
+        <div class="month-grid-head">
+          <div class="dow">Mon</div><div class="dow">Tue</div><div class="dow">Wed</div>
+          <div class="dow">Thu</div><div class="dow">Fri</div><div class="dow">Sat</div><div class="dow">Sun</div>
+        </div>
+        <div class="month-grid" id="monthGrid"></div>
+      </div>
+      <!-- week view -->
+      <div class="week-view" id="weekView">
+        <div class="week-head">
+          <div class="wh-time"></div>
+          <div class="wh-day" id="wh0"><div class="wd-name">Mon</div><div class="wd-num">—</div></div>
+          <div class="wh-day" id="wh1"><div class="wd-name">Tue</div><div class="wd-num">—</div></div>
+          <div class="wh-day" id="wh2"><div class="wd-name">Wed</div><div class="wd-num">—</div></div>
+          <div class="wh-day" id="wh3"><div class="wd-name">Thu</div><div class="wd-num">—</div></div>
+          <div class="wh-day" id="wh4"><div class="wd-name">Fri</div><div class="wd-num">—</div></div>
+          <div class="wh-day" id="wh5"><div class="wd-name">Sat</div><div class="wd-num">—</div></div>
+          <div class="wh-day" id="wh6"><div class="wd-name">Sun</div><div class="wd-num">—</div></div>
+        </div>
+        <div class="week-body" id="weekBody"></div>
+      </div>
+    </div>
+
+    <!-- side panel -->
+    <div class="side-panel" id="sidePanel">
+      <div class="sp-card" id="agendaCard">
+        <div class="sp-head">
+          <h3 id="agendaTitle">Today</h3>
+          <span class="sp-date" id="agendaDate"></span>
+        </div>
+        <div id="agendaBody"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Add event modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Add event</h2>
+      <button class="modal-close" onclick="closeModal()">&#215;</button>
+    </div>
+    <div class="modal-body">
+      <div class="type-tabs">
+        <div class="type-tab active" id="ttSession" onclick="setModalType('session')">
+          <div class="tt-icon">&#x1F4CB;</div>
+          <div class="tt-label">Patient session</div>
+        </div>
+        <div class="type-tab" id="ttAppt" onclick="setModalType('appt')">
+          <div class="tt-icon">&#x1F4C5;</div>
+          <div class="tt-label">My appointment</div>
+        </div>
+      </div>
+      <div id="sessionFields">
+        <div class="form-field">
+          <label>Patient</label>
+          <select id="mPatient">
+            <option value="">Select patient…</option>
+          </select>
+        </div>
+      </div>
+      <div id="apptFields" style="display:none;">
+        <div class="form-field">
+          <label>Title</label>
+          <input type="text" id="mTitle" placeholder="e.g. Team meeting">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Date</label>
+          <input type="date" id="mDate">
+        </div>
+        <div class="form-field">
+          <label>Time</label>
+          <input type="time" id="mTime" value="10:00">
+        </div>
+      </div>
+      <div class="form-field">
+        <label>Notes (optional)</label>
+        <textarea id="mNotes" rows="2" placeholder="Any notes for this session…"></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveEvent()">Save event</button>
+    </div>
+  </div>
+</div>
+
+<script src="mock-data.js"></script>
+<script>
+const ML = window.MemoryLabData;
+/* ════════════════════════════════════════════════════════
+   Here i just put some generated harcoded data
+════════════════════════════════════════════════════════ */
+const TODAY = ML.TODAY;
+const PATIENTS = ML.patients;
+
+let EVENTS = ML.cloneEvents();
+
+/* ════════════════════════════════════════════════════════
+   STATE
+════════════════════════════════════════════════════════ */
+let viewDate    = new Date(TODAY);
+let currentView = 'month';
+let showSessions= true;
+let showClinic  = true;
+let selectedPats= new Set(); // empty = all
+let selectedDay = null;
+let selectedEvt = null;
+
+/* ════════════════════════════════════════════════════════
+   HELPERS
+════════════════════════════════════════════════════════ */
+function sameDay(a,b){ return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate(); }
+function fmtDate(d){ return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
+function fmtDay(d){ return d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'}); }
+function getOrdinal(n){ const s=n%10,k=n%100; if(s===1&&k!==11)return n+'st'; if(s===2&&k!==12)return n+'nd'; if(s===3&&k!==13)return n+'rd'; return n+'th'; }
+
+function visibleEvents() {
+  return EVENTS.filter(e=>{
+    if(e.type==='session' && !showSessions) return false;
+    if(e.type==='clinic'  && !showClinic)   return false;
+    if(e.type==='session' && selectedPats.size>0 && !selectedPats.has(e.pid)) return false;
+    return true;
+  });
+}
+
+function eventsForDay(d){ return visibleEvents().filter(e=>sameDay(e.date,d)).sort((a,b)=>a.time.localeCompare(b.time)); }
+
+function patientOf(e){ return e.pid ? ML.getPatient(e.pid) : null; }
+
+function eventTitle(e){
+  if(e.type==='clinic') return e.title;
+  const p=patientOf(e);
+  return p ? p.name.split(' ')[0] : '?';
+}
+
+function eventColour(e){
+  if(e.type==='clinic') return 'var(--navy-soft)';
+  const p=patientOf(e);
+  return p ? p.colour : '#888';
+}
+
+/* ════════════════════════════════════════════════════════
+   VIEW SWITCHING
+════════════════════════════════════════════════════════ */
+function setView(v){
+  currentView=v;
+  document.getElementById('tabMonth').className='view-tab'+(v==='month'?' active':'');
+  document.getElementById('tabWeek').className='view-tab'+(v==='week'?' active':'');
+  document.getElementById('monthView').style.display=v==='month'?'block':'none';
+  document.getElementById('weekView').style.display=v==='week'?'block':'none';
+  if(v==='month') renderMonth();
+  else renderWeek();
+  updateMonthLabel();
+}
+
+function shiftMonth(dir){
+  if(currentView==='month'){
+    viewDate=new Date(viewDate.getFullYear(),viewDate.getMonth()+dir,1);
+    renderMonth();
+  } else {
+    viewDate=new Date(viewDate.getTime()+dir*7*86400000);
+    renderWeek();
+  }
+  updateMonthLabel();
+}
+
+function goToday(){
+  viewDate=new Date(TODAY);
+  if(currentView==='month') renderMonth();
+  else renderWeek();
+  updateMonthLabel();
+  showDayAgenda(TODAY);
+}
+
+function updateMonthLabel(){
+  const label=document.getElementById('monthLabel');
+  if(currentView==='month'){
+    label.textContent=viewDate.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+  } else {
+    const weekStart=getWeekStart(viewDate);
+    const weekEnd=new Date(weekStart.getTime()+6*86400000);
+    const s=weekStart.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+    const e=weekEnd.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+    label.textContent=s+' – '+e;
+  }
+}
+
+function getWeekStart(d){
+  const dt=new Date(d);
+  const day=dt.getDay(); // 0=Sun
+  const diff=day===0?-6:1-day; // Monday
+  dt.setDate(dt.getDate()+diff);
+  dt.setHours(0,0,0,0);
+  return dt;
+}
+
+/* ════════════════════════════════════════════════════════
+   MONTH RENDER
+════════════════════════════════════════════════════════ */
+function renderMonth(){
+  const grid=document.getElementById('monthGrid');
+  grid.innerHTML='';
+  const y=viewDate.getFullYear(), m=viewDate.getMonth();
+  const first=new Date(y,m,1);
+  // Monday-based: find start
+  let startDay=first.getDay(); if(startDay===0)startDay=7; startDay--;
+  const start=new Date(first); start.setDate(start.getDate()-startDay);
+  for(let i=0;i<42;i++){
+    const d=new Date(start); d.setDate(start.getDate()+i);
+    const cell=document.createElement('div');
+    cell.className='day-cell'+(d.getMonth()!==m?' other-month':'')+(sameDay(d,TODAY)?' today':'')+(selectedDay&&sameDay(d,selectedDay)?' selected':'');
+    const num=document.createElement('div');
+    num.className='day-num'; num.textContent=d.getDate();
+    cell.appendChild(num);
+    const evts=eventsForDay(d);
+    const evtWrap=document.createElement('div'); evtWrap.className='day-events';
+    const show=evts.slice(0,3);
+    show.forEach(e=>{
+      const pill=document.createElement('div');
+      const col=eventColour(e);
+      pill.className='event-pill'+(e.status==='completed'?' completed':'')+(e.status==='overdue'?' overdue':'')+(e.type==='clinic'?' clinic':'');
+      if(e.type==='session'){
+        pill.style.background=e.status==='overdue'?'transparent':col.replace('var(','').replace(')','').trim();
+        pill.style.color='#fff';
+        if(e.status==='overdue'){pill.style.background='transparent';pill.style.borderColor=col.replace('var(','').replace(')','');pill.style.color=col.replace('var(','').replace(')','')+'';}
+        // inline style for custom properties
+        pill.setAttribute('style',e.status==='overdue'?
+          `border:1.5px dashed;color:${getComputedColor(e.pid)};font-size:11px;font-weight:600;padding:2px 7px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;` :
+          `background:${getComputedColor(e.pid)};color:#fff;font-size:11px;font-weight:600;padding:2px 7px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;opacity:${e.status==='completed'?'.55':'1'}`);
+      }
+      pill.textContent=eventTitle(e);
+      pill.onclick=(ev)=>{ev.stopPropagation();selectEvent(e,d);};
+      evtWrap.appendChild(pill);
+    });
+    if(evts.length>3){
+      const more=document.createElement('div');
+      more.className='more-pill';
+      more.textContent=`+${evts.length-3} more`;
+      more.onclick=(ev)=>{ev.stopPropagation();showDayAgenda(d);};
+      evtWrap.appendChild(more);
+    }
+    cell.appendChild(evtWrap);
+    cell.onclick=()=>{selectedDay=new Date(d);showDayAgenda(d);renderMonth();};
+    grid.appendChild(cell);
+  }
+}
+
+const PAT_CSS_VARS=['#4A6FA5','#7B5EA7','#2E8B72','#C17D2A','#3D7FB5','#8B5A6E'];
+function getComputedColor(pid){
+  const idx = ML.patientIndex(pid);
+  return idx>=0&&idx<PAT_CSS_VARS.length?PAT_CSS_VARS[idx]:'#5D6475';
+}
+
+/* ════════════════════════════════════════════════════════
+   WEEK RENDER
+════════════════════════════════════════════════════════ */
+const HOURS=['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00'];
+
+function renderWeek(){
+  const ws=getWeekStart(viewDate);
+  const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  // Update headers
+  for(let i=0;i<7;i++){
+    const d=new Date(ws); d.setDate(ws.getDate()+i);
+    const el=document.getElementById('wh'+i);
+    el.className='wh-day'+(sameDay(d,TODAY)?' today':'');
+    el.innerHTML=`<div class="wd-name">${days[i]}</div><div class="wd-num">${d.getDate()}</div>`;
+  }
+  const body=document.getElementById('weekBody');
+  body.innerHTML='';
+  // Time labels
+  const timeCol=document.createElement('div'); timeCol.className='week-time-col';
+  HOURS.forEach(h=>{
+    const lbl=document.createElement('div'); lbl.className='time-slot-label'; lbl.textContent=h;
+    timeCol.appendChild(lbl);
+  });
+  body.appendChild(timeCol);
+  // Day columns
+  for(let i=0;i<7;i++){
+    const d=new Date(ws); d.setDate(ws.getDate()+i);
+    const col=document.createElement('div'); col.className='week-day-col';
+    HOURS.forEach((h,hi)=>{
+      const slot=document.createElement('div'); slot.className='week-slot';
+      slot.onclick=()=>{ openModalWithDate(d,h); };
+      col.appendChild(slot);
+    });
+    // Place events
+    const evts=eventsForDay(d);
+    evts.forEach(e=>{
+      const [eh,em]=e.time.split(':').map(Number);
+      const startH=Math.max(8,Math.min(18,eh));
+      const slotIdx=startH-8;
+      const top=slotIdx*60+(em/60)*60;
+      const ev=document.createElement('div');
+      ev.className='week-event'+(e.type==='clinic'?' clinic':'');
+      ev.style.cssText=`top:${top}px;height:54px;`;
+      if(e.type==='session'){
+        const c=getComputedColor(e.pid);
+        ev.style.background=c;
+        ev.style.color='#fff';
+        ev.style.opacity=e.status==='completed'?'.6':'1';
+      }
+      ev.innerHTML=`<div class="we-title">${eventTitle(e)}</div><div class="we-time">${e.time}${e.type==='session'?` · Sess ${e.id}`:''}</div>`;
+      ev.onclick=(ev2)=>{ev2.stopPropagation();selectEvent(e,d);};
+      col.appendChild(ev);
+    });
+    body.appendChild(col);
+  }
+}
+
+/* ════════════════════════════════════════════════════════
+   SIDE PANEL
+════════════════════════════════════════════════════════ */
+function showDayAgenda(d){
+  selectedDay=new Date(d);
+  selectedEvt=null;
+  const title=sameDay(d,TODAY)?'Today':fmtDay(d);
+  document.getElementById('agendaTitle').textContent=title;
+  document.getElementById('agendaDate').textContent=fmtDate(d);
+  const body=document.getElementById('agendaBody');
+  const evts=eventsForDay(d);
+  if(evts.length===0){
+    body.innerHTML='<div class="agenda-empty">No events scheduled for this day.<br><small>Click an empty slot in week view to add one.</small></div>';
+    return;
+  }
+  body.innerHTML='';
+  evts.forEach(e=>{
+    const item=document.createElement('div'); item.className='agenda-item';
+    item.onclick=()=>selectEvent(e,d);
+    const col=document.createElement('div'); col.className='ai-color';
+    col.style.background=e.type==='clinic'?'var(--navy-soft)':getComputedColor(e.pid);
+    const bd=document.createElement('div'); bd.className='ai-body';
+    const p=patientOf(e);
+    bd.innerHTML=`
+      <div class="ai-title">${e.type==='clinic'?e.title:(p?p.name:'Unknown')}</div>
+      <div class="ai-sub">${e.type==='session'?`Session ${e.id} · ${p?p.age+' yrs':''}`:''}</div>
+      <div class="ai-time">${e.time}${e.note?` · ${e.note}`:''}</div>
+      ${e.status==='overdue'?'<span class="ai-badge" style="background:#FBF1E3;color:#C77B30;">Session overdue</span>':''}
+      ${e.status==='completed'?'<span class="ai-badge" style="background:#EAF2F0;color:#3B7D6E;">Completed</span>':''}
+    `;
+    item.appendChild(col); item.appendChild(bd);
+    document.getElementById('agendaBody').appendChild(item);
+  });
+}
+
+function selectEvent(e,d){
+  selectedEvt=e;
+  if(e.type==='session'){
+    showPatientPanel(e);
+  } else {
+    showClinicEventPanel(e,d);
+  }
+}
+
+function showPatientPanel(e){
+  const p=patientOf(e);
+  const latest=ML.latestSession(p);
+  const sp=document.getElementById('sidePanel');
+  const recentSess=ML.recentSessions(p,4);
+  const edu=ML.educationFor(p.educationCode);
+  sp.innerHTML=`
+    <div class="sp-card">
+      <div class="pd-header">
+        <div class="pd-name">${p.name}</div>
+        <div class="pd-tags">
+          <span class="pd-tag">${p.age} yrs</span>
+          <span class="pd-tag">${edu.label}</span>
+          <span class="pd-tag">${p.sessions.length} sessions</span>
+        </div>
+      </div>
+      <div class="pd-metrics">
+        <div class="pd-metric"><div class="pm-label">SGMA</div><div class="pm-val">${Math.round(ML.sofToSGMA(latest.sof))}</div></div>
+        <div class="pd-metric"><div class="pm-label">SoF</div><div class="pm-val">${latest.sof.toFixed(2)}</div></div>
+        <div class="pd-metric"><div class="pm-label">Session</div><div class="pm-val">#${e.id}</div></div>
+      </div>
+      <div class="pd-timeline">
+        ${recentSess.map(s=>`
+          <div class="pd-sess">
+            <span class="ps-date">${s.date}</span>
+            <span class="ps-sgma">SGMA ${Math.round(ML.sofToSGMA(s.sof))}</span>
+            <span class="ps-q ${s.quality}">${s.quality==='good'?'Good':'Caution'}</span>
+          </div>`).join('')}
+      </div>
+      <div class="pd-foot" style="display:flex;flex-direction:column;gap:8px;">
+        <button class="btn-sm primary" onclick="window.location.href='patient_profile.html?patient=${p.id}'">Open full profile</button>
+        <button class="btn-sm" onclick="resetSidePanel()">&#8592; Back to agenda</button>
+      </div>
+    </div>`;
+}
+
+function showClinicEventPanel(e,d){
+  const sp=document.getElementById('sidePanel');
+  sp.innerHTML=`
+    <div class="sp-card">
+      <div class="sp-head"><h3>${e.title}</h3><span class="sp-date">${fmtDate(d)}</span></div>
+      <div style="padding:16px 18px;">
+        <div style="font-size:13px;color:var(--text-soft);margin-bottom:8px;">&#x1F550; ${e.time}</div>
+        ${e.note?`<div style="font-size:13px;color:var(--text);background:var(--bg);border-radius:8px;padding:12px 14px;border-left:3px solid var(--navy-soft);">${e.note}</div>`:'<div style="font-size:13px;color:var(--text-faint);font-style:italic;">No notes added.</div>'}
+      </div>
+      <div class="pd-foot"><button class="btn-sm" onclick="resetSidePanel()">&#8592; Back to agenda</button></div>
+    </div>`;
+}
+
+function resetSidePanel(){
+  const sp=document.getElementById('sidePanel');
+  sp.innerHTML=`
+    <div class="sp-card" id="agendaCard">
+      <div class="sp-head">
+        <h3 id="agendaTitle">Today</h3>
+        <span class="sp-date" id="agendaDate"></span>
+      </div>
+      <div id="agendaBody"></div>
+    </div>`;
+  showDayAgenda(selectedDay||TODAY);
+}
+
+/* ════════════════════════════════════════════════════════
+   FILTERS
+════════════════════════════════════════════════════════ */
+function toggleFilter(type){
+  if(type==='sessions'){
+    showSessions=!showSessions;
+    document.getElementById('ftSessions').className='filter-toggle'+(showSessions?' on':'');
+  } else {
+    showClinic=!showClinic;
+    document.getElementById('ftClinic').className='filter-toggle'+(showClinic?' on':'');
+  }
+  if(currentView==='month') renderMonth(); else renderWeek();
+  if(selectedDay) showDayAgenda(selectedDay);
+}
+
+function togglePFDropdown(){
+  document.getElementById('pfDropdown').classList.toggle('open');
+}
+
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.patient-filter-wrap')){
+    document.getElementById('pfDropdown').classList.remove('open');
+  }
+});
+
+function togglePatient(pid){
+  if(selectedPats.has(pid)) selectedPats.delete(pid);
+  else selectedPats.add(pid);
+  renderPFDropdown();
+  const badge=document.getElementById('pfBadge');
+  badge.style.display=selectedPats.size>0?'':'none';
+  badge.textContent=selectedPats.size;
+  if(currentView==='month') renderMonth(); else renderWeek();
+  if(selectedDay) showDayAgenda(selectedDay);
+}
+
+function renderPFDropdown(){
+  const dd=document.getElementById('pfDropdown');
+  dd.innerHTML=`<div class="pf-item" onclick="clearPatientFilter()" style="border-bottom:1px solid var(--border);margin-bottom:4px;">
+    <div class="pf-dot" style="background:var(--text-faint);"></div>
+    <div class="pf-name" style="color:var(--text-soft);">All patients</div>
+  </div>`+
+  PATIENTS.map(p=>`
+    <div class="pf-item ${selectedPats.has(p.id)?'selected':''}" onclick="togglePatient('${p.id}')">
+      <div class="pf-dot" style="background:${getComputedColor(p.id)};"></div>
+      <div class="pf-name">${p.name}</div>
+      <div class="pf-check">${selectedPats.has(p.id)?'&#10003;':''}</div>
+    </div>`).join('');
+}
+
+function clearPatientFilter(){
+  selectedPats.clear();
+  document.getElementById('pfBadge').style.display='none';
+  renderPFDropdown();
+  if(currentView==='month') renderMonth(); else renderWeek();
+  if(selectedDay) showDayAgenda(selectedDay);
+}
+
+function renderLegend(){
+  const wrap=document.getElementById('legendWrap');
+  wrap.innerHTML=PATIENTS.map(p=>`
+    <div class="legend-item">
+      <div class="legend-dot" style="background:${getComputedColor(p.id)};"></div>
+      ${p.name.split(' ')[0]}
+    </div>`).join('')+`
+    <div class="legend-item">
+      <div class="legend-dot" style="background:var(--navy-soft);border-radius:2px;"></div>
+      My appts
+    </div>`;
+}
+
+/* ════════════════════════════════════════════════════════
+   MODAL
+════════════════════════════════════════════════════════ */
+let modalType='session';
+function openModal(){ openModalWithDate(TODAY,'10:00'); }
+function openModalWithDate(d,time){
+  const fmt=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  document.getElementById('mDate').value=fmt;
+  document.getElementById('mTime').value=time||'10:00';
+  document.getElementById('mNotes').value='';
+  // Populate patient select
+  const sel=document.getElementById('mPatient');
+  sel.innerHTML='<option value="">Select patient…</option>'+PATIENTS.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeModal(){ document.getElementById('modalOverlay').classList.remove('open'); }
+function closeModalOutside(e){ if(e.target===document.getElementById('modalOverlay')) closeModal(); }
+function setModalType(t){
+  modalType=t;
+  document.getElementById('ttSession').className='type-tab'+(t==='session'?' active':'');
+  document.getElementById('ttAppt').className='type-tab'+(t==='appt'?' active':'');
+  document.getElementById('sessionFields').style.display=t==='session'?'':'none';
+  document.getElementById('apptFields').style.display=t==='appt'?'':'none';
+}
+function saveEvent(){
+  const dateVal=document.getElementById('mDate').value;
+  const timeVal=document.getElementById('mTime').value;
+  if(!dateVal||!timeVal){alert('Please fill in date and time.'); return;}
+  const [y,m,d]=dateVal.split('-').map(Number);
+  const newDate=new Date(y,m-1,d);
+  if(modalType==='session'){
+    const pid=document.getElementById('mPatient').value;
+    if(!pid){alert('Please select a patient.'); return;}
+    EVENTS.push({id:EVENTS.length+1,type:'session',pid,date:newDate,time:timeVal,status:'confirmed',note:document.getElementById('mNotes').value});
+  } else {
+    const title=document.getElementById('mTitle').value||'Appointment';
+    EVENTS.push({id:EVENTS.length+1,type:'clinic',pid:null,date:newDate,time:timeVal,title,status:'confirmed',note:document.getElementById('mNotes').value});
+  }
+  closeModal();
+  if(currentView==='month') renderMonth(); else renderWeek();
+  showDayAgenda(newDate);
+}
+
+/* ════════════════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════════════════ */
+const initialPatientId = new URLSearchParams(window.location.search).get('patient');
+if(initialPatientId && ML.getPatient(initialPatientId).id === initialPatientId){
+  selectedPats.add(initialPatientId);
+  const badge=document.getElementById('pfBadge');
+  badge.style.display='';
+  badge.textContent=selectedPats.size;
+}
+renderPFDropdown();
+renderLegend();
+updateMonthLabel();
+renderMonth();
+showDayAgenda(TODAY);
+</script>
+</body>
+</html>
