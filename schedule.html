@@ -165,7 +165,7 @@ body{font-family:'Segoe UI','Helvetica Neue',system-ui,sans-serif;background:var
 /* ── MODAL ── */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(26,35,64,.45);z-index:500;align-items:center;justify-content:center;}
 .modal-overlay.open{display:flex;}
-.modal{background:var(--card);border-radius:14px;width:440px;box-shadow:var(--shadow-lg);overflow:hidden;}
+.modal{background:var(--card);border-radius:14px;width:440px;box-shadow:var(--shadow-lg);overflow:visible;}
 .modal-head{padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
 .modal-head h2{font-size:16px;font-weight:700;color:var(--navy);}
 .modal-close{width:28px;height:28px;border-radius:7px;border:1px solid var(--border);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--text-soft);transition:all .15s;}
@@ -181,6 +181,26 @@ body{font-family:'Segoe UI','Helvetica Neue',system-ui,sans-serif;background:var
 .form-field label{display:block;font-size:12px;font-weight:600;color:var(--text-soft);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;}
 .form-field select,.form-field input,.form-field textarea{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;color:var(--text);outline:none;transition:border .15s;}
 .form-field select:focus,.form-field input:focus,.form-field textarea:focus{border-color:var(--navy);}
+.modal-patient-picker{position:relative;}
+.modal-patient-select{width:100%;min-height:37px;padding:9px 12px;border:1px solid var(--border);border-radius:7px;background:#fff;color:var(--text);font-size:13px;font-family:inherit;display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;transition:border .15s;}
+.modal-patient-select:hover,.modal-patient-picker.open .modal-patient-select{border-color:var(--navy);}
+.modal-patient-select.placeholder{color:var(--text-faint);}
+.modal-patient-caret{font-size:10px;color:var(--text-soft);line-height:1;}
+.modal-patient-menu{display:none;position:absolute;left:0;right:0;top:calc(100% + 6px);background:#fff;border:1px solid var(--border);border-radius:9px;box-shadow:var(--shadow-lg);z-index:900;overflow:hidden;}
+.modal-patient-picker.open .modal-patient-menu{display:block;}
+.modal-patient-search{padding:8px;border-bottom:1px solid var(--border);}
+.modal-patient-search input{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;color:var(--text);outline:none;}
+.modal-patient-search input:focus{border-color:var(--navy);}
+.modal-patient-results{max-height:205px;overflow-y:auto;padding:5px;}
+.modal-patient-row{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:7px;cursor:pointer;transition:background .12s;}
+.modal-patient-row:hover{background:var(--bg);}
+.modal-patient-row.selected{background:#F0F3F8;}
+.modal-patient-main{flex:1;min-width:0;}
+.modal-patient-name{font-size:13px;font-weight:650;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.modal-patient-meta{font-size:11.5px;color:var(--text-soft);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.modal-patient-check{width:17px;height:17px;border:1.5px solid var(--border);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;background:#fff;flex-shrink:0;}
+.modal-patient-row.selected .modal-patient-check{background:var(--navy);border-color:var(--navy);}
+.modal-patient-empty{font-size:12.5px;color:var(--text-faint);padding:12px 10px;}
 .form-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
 .modal-foot{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;}
 .btn-cancel{background:#fff;border:1px solid var(--border);color:var(--text-soft);padding:9px 18px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;}
@@ -309,9 +329,19 @@ body{font-family:'Segoe UI','Helvetica Neue',system-ui,sans-serif;background:var
       <div id="sessionFields">
         <div class="form-field">
           <label>Patient</label>
-          <select id="mPatient">
-            <option value="">Select patient…</option>
-          </select>
+          <input type="hidden" id="mPatient" value="">
+          <div class="modal-patient-picker">
+            <button type="button" class="modal-patient-select placeholder" id="mPatientSelect" onclick="toggleModalPatientDropdown(event)">
+              <span id="mPatientLabel">Select patient...</span>
+              <span class="modal-patient-caret">&#9660;</span>
+            </button>
+            <div class="modal-patient-menu" id="mPatientMenu" onclick="event.stopPropagation()">
+              <div class="modal-patient-search">
+                <input id="mPatientSearch" type="search" placeholder="Search patient..." oninput="updateModalPatientSearch(this.value)">
+              </div>
+              <div class="modal-patient-results" id="mPatientResults"></div>
+            </div>
+          </div>
         </div>
       </div>
       <div id="apptFields" style="display:none;">
@@ -368,6 +398,9 @@ let showSessions= true;
 let showClinic  = true;
 let selectedPats= new Set(); // empty = all
 let patientFilterSearch = '';
+let modalPatientSearch = '';
+let modalSelectedPatientId = '';
+let modalPatientDropdownOpen = false;
 let selectedDay = null;
 let selectedEvt = null;
 
@@ -414,6 +447,19 @@ function addOneHour(timeString){
 
 function formatEventTime(e){
   return e.endTime ? `${e.time}-${e.endTime}` : e.time;
+}
+
+function patientMatchesQuery(patient, query){
+  const q=query.trim().toLowerCase();
+  if(!q) return true;
+  const edu=ML.educationFor(patient.educationCode);
+  return [
+    patient.name,
+    patient.initials,
+    edu.label,
+    edu.fullLabel,
+    patient.status,
+  ].join(' ').toLowerCase().includes(q);
 }
 
 /* ════════════════════════════════════════════════════════
@@ -713,6 +759,9 @@ document.addEventListener('click',function(e){
   if(!e.target.closest('.patient-filter-wrap')){
     document.getElementById('pfDropdown').classList.remove('open');
   }
+  if(!e.target.closest('.modal-patient-picker')){
+    closeModalPatientDropdown();
+  }
 });
 
 function togglePatient(pid){
@@ -728,17 +777,7 @@ function togglePatient(pid){
 
 function renderPFDropdown(){
   const dd=document.getElementById('pfDropdown');
-  const q=patientFilterSearch.trim().toLowerCase();
-  const matches=PATIENTS.filter(p=>{
-    const edu=ML.educationFor(p.educationCode);
-    return [
-      p.name,
-      p.initials,
-      edu.label,
-      edu.fullLabel,
-      p.status,
-    ].join(' ').toLowerCase().includes(q);
-  }).slice(0,PATIENT_FILTER_LIMIT);
+  const matches=PATIENTS.filter(p=>patientMatchesQuery(p, patientFilterSearch)).slice(0,PATIENT_FILTER_LIMIT);
 
   dd.innerHTML=`<div class="pf-item" onclick="clearPatientFilter()" style="border-bottom:1px solid var(--border);margin-bottom:4px;">
     <div class="pf-dot" style="background:var(--text-faint);"></div>
@@ -778,6 +817,82 @@ function clearPatientFilter(){
 ════════════════════════════════════════════════════════ */
 let modalType='session';
 function openModal(){ setModalType('session'); openModalWithDate(TODAY,'10:00'); }
+
+function renderModalPatientPicker(){
+  const input=document.getElementById('mPatientSearch');
+  const results=document.getElementById('mPatientResults');
+  const hidden=document.getElementById('mPatient');
+  const picker=document.querySelector('.modal-patient-picker');
+  const select=document.getElementById('mPatientSelect');
+  const label=document.getElementById('mPatientLabel');
+  if(!input||!results||!hidden||!picker||!select||!label) return;
+
+  hidden.value=modalSelectedPatientId;
+  input.value=modalPatientSearch;
+  const selectedPatient=PATIENTS.find(p=>p.id===modalSelectedPatientId);
+  label.textContent=selectedPatient ? selectedPatient.name : 'Select patient...';
+  select.className='modal-patient-select'+(selectedPatient?'':' placeholder');
+  picker.className='modal-patient-picker'+(modalPatientDropdownOpen?' open':'');
+  const matches=PATIENTS.filter(p=>patientMatchesQuery(p, modalPatientSearch)).slice(0,PATIENT_FILTER_LIMIT);
+
+  results.innerHTML=matches.length ? matches.map(p=>{
+    const edu=ML.educationFor(p.educationCode);
+    const selected=p.id===modalSelectedPatientId;
+    return `<div class="modal-patient-row ${selected?'selected':''}" onclick="selectModalPatient('${p.id}')">
+      <div class="modal-patient-main">
+        <div class="modal-patient-name">${p.name}</div>
+        <div class="modal-patient-meta">${p.initials} &middot; ${edu.label} &middot; ${p.status}</div>
+      </div>
+      <div class="modal-patient-check">${selected?'&#10003;':''}</div>
+    </div>`;
+  }).join('') : '<div class="modal-patient-empty">No patients found.</div>';
+}
+
+function toggleModalPatientDropdown(event){
+  if(event) event.stopPropagation();
+  modalPatientDropdownOpen=!modalPatientDropdownOpen;
+  renderModalPatientPicker();
+  if(modalPatientDropdownOpen){
+    const input=document.getElementById('mPatientSearch');
+    if(input){
+      input.focus();
+      input.setSelectionRange(input.value.length,input.value.length);
+    }
+  }
+}
+
+function closeModalPatientDropdown(){
+  if(!modalPatientDropdownOpen) return;
+  modalPatientDropdownOpen=false;
+  renderModalPatientPicker();
+}
+
+function updateModalPatientSearch(value){
+  modalPatientSearch=value;
+  renderModalPatientPicker();
+  const input=document.getElementById('mPatientSearch');
+  if(input){
+    input.focus();
+    input.setSelectionRange(input.value.length,input.value.length);
+  }
+}
+
+function selectModalPatient(patientId){
+  const patient=PATIENTS.find(p=>p.id===patientId);
+  modalSelectedPatientId=patient ? patient.id : '';
+  modalPatientSearch=patient ? patient.name : modalPatientSearch;
+  modalPatientDropdownOpen=false;
+  renderModalPatientPicker();
+}
+
+function setModalPatient(patientId){
+  const patient=PATIENTS.find(p=>p.id===patientId);
+  modalSelectedPatientId=patient ? patient.id : '';
+  modalPatientSearch=patient ? patient.name : '';
+  modalPatientDropdownOpen=false;
+  renderModalPatientPicker();
+}
+
 function openModalWithDate(d,time,patientId){
   const fmt=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   const startTime=time||'10:00';
@@ -785,12 +900,13 @@ function openModalWithDate(d,time,patientId){
   document.getElementById('mStartTime').value=startTime;
   document.getElementById('mEndTime').value=addOneHour(startTime);
   document.getElementById('mNotes').value='';
-  const sel=document.getElementById('mPatient');
-  sel.innerHTML='<option value="">Select patient...</option>'+PATIENTS.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
-  if(patientId) sel.value=patientId;
+  setModalPatient(patientId||'');
   document.getElementById('modalOverlay').classList.add('open');
 }
-function closeModal(){ document.getElementById('modalOverlay').classList.remove('open'); }
+function closeModal(){
+  closeModalPatientDropdown();
+  document.getElementById('modalOverlay').classList.remove('open');
+}
 function closeModalOutside(e){ if(e.target===document.getElementById('modalOverlay')) closeModal(); }
 function setModalType(t){
   modalType=t;
