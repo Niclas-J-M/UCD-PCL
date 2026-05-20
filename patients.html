@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MemoryLab - Patients</title>
+<style>
+  :root {
+    --red:#BE0A1E; --navy:#1A2340; --navy-soft:#2C3658;
+    --bg:#F4F5F7; --card:#FFFFFF; --border:#E2E4E9;
+    --text:#1F2433; --text-soft:#6B7080; --text-faint:#9499A6;
+    --accent-soft:#FBEBED; --good:#3B7D6E; --good-soft:#EAF2F0;
+    --watch:#C77B30; --watch-soft:#FBF1E3;
+    --shadow:0 1px 3px rgba(26,35,64,0.06),0 1px 2px rgba(26,35,64,0.04);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Segoe UI','Helvetica Neue',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+  .topbar{background:var(--navy);color:#fff;height:56px;display:flex;align-items:center;padding:0 28px;gap:32px;}
+  .logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:15px;letter-spacing:.2px;}
+  .logo-mark{width:24px;height:24px;background:var(--red);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;}
+  .logo span{color:#B9BECE;font-weight:400;}
+  .nav{display:flex;gap:4px;margin-left:12px;}
+  .nav a{color:#B9BECE;text-decoration:none;padding:7px 14px;border-radius:6px;font-size:13px;transition:background .15s,color .15s;}
+  .nav a:hover{color:#fff;background:var(--navy-soft);}
+  .nav a.active{color:#fff;background:var(--navy-soft);font-weight:600;}
+  .topbar-right{margin-left:auto;display:flex;align-items:center;gap:18px;}
+  .clinician-badge{display:flex;align-items:center;gap:9px;font-size:13px;}
+  .avatar{width:30px;height:30px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;}
+  .clinician-badge .meta{line-height:1.25;}
+  .clinician-badge .meta .name{font-weight:600;}
+  .clinician-badge .meta .role{color:#B9BECE;font-size:11.5px;}
+  .page{max-width:1180px;margin:0 auto;padding:28px;}
+  .page-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:22px;}
+  h1{font-size:28px;font-weight:700;color:var(--navy);letter-spacing:-.3px;}
+  .subhead{font-size:13px;color:var(--text-soft);margin-top:2px;}
+  .panel{background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);overflow:hidden;}
+  .toolbar{display:flex;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+  .search{position:relative;flex:1;min-width:260px;}
+  .search input{width:100%;height:38px;border:1px solid var(--border);border-radius:7px;background:#fff;padding:0 13px 0 36px;font-size:13.5px;color:var(--text);outline:none;}
+  .search input:focus{border-color:#B8C0D0;box-shadow:0 0 0 3px rgba(74,111,165,.10);}
+  .search .icon{position:absolute;left:13px;top:9px;color:var(--text-faint);font-size:13px;}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;}
+  .filter-chip{font-size:12.5px;font-weight:600;padding:7px 11px;border:1px solid var(--border);border-radius:7px;color:var(--text-soft);background:#fff;cursor:pointer;transition:all .15s;user-select:none;}
+  .filter-chip:hover{color:var(--navy);border-color:#C9CED8;}
+  .filter-chip.active{background:var(--navy);border-color:var(--navy);color:#fff;}
+  table{width:100%;border-collapse:collapse;}
+  th{height:38px;background:#FAFAFB;border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:.45px;color:var(--text-soft);text-align:left;font-weight:700;padding:0 16px;}
+  td{border-bottom:1px solid var(--border);padding:13px 16px;vertical-align:middle;}
+  tr.patient-row{cursor:pointer;transition:background .12s;}
+  tr.patient-row:hover{background:#FAFAFB;}
+  .patient-cell{display:flex;align-items:center;gap:11px;}
+  .patient-initials{width:36px;height:36px;border-radius:9px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;}
+  .p-name{font-weight:700;color:var(--navy);}
+  .p-meta{font-size:12px;color:var(--text-soft);margin-top:1px;}
+  .score-main{font-weight:800;color:var(--navy);font-size:17px;}
+  .score-sub{font-size:11.5px;color:var(--text-faint);margin-top:1px;}
+  .trend{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;border-radius:999px;padding:4px 9px;}
+  .trend.declining{background:var(--accent-soft);color:var(--red);}
+  .trend.stable{background:var(--good-soft);color:var(--good);}
+  .trend.new{background:#EEF0F6;color:var(--navy-soft);}
+  .badges{display:flex;gap:6px;flex-wrap:wrap;}
+  .badge{display:inline-flex;align-items:center;font-size:11.5px;font-weight:700;border-radius:999px;padding:4px 8px;background:#EEF0F6;color:var(--navy-soft);white-space:nowrap;}
+  .badge.review,.badge.quality{background:var(--accent-soft);color:var(--red);}
+  .badge.due{background:var(--watch-soft);color:var(--watch);}
+  .badge.new{background:#EEF0F6;color:var(--navy-soft);}
+  .actions{display:flex;gap:7px;justify-content:flex-end;}
+  .btn-sm{border:1px solid var(--border);background:#fff;color:var(--text-soft);border-radius:7px;padding:7px 10px;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;}
+  .btn-sm:hover{border-color:#C9CED8;color:var(--navy);}
+  .btn-sm.primary{background:var(--navy);border-color:var(--navy);color:#fff;}
+  .btn-sm.primary:hover{background:var(--navy-soft);}
+  .empty-state{display:none;padding:36px 20px;text-align:center;color:var(--text-soft);font-size:13px;}
+  .count-note{font-size:12.5px;color:var(--text-soft);padding:12px 18px;border-top:1px solid var(--border);background:#FAFAFB;}
+  @media(max-width:860px){
+    .page{padding:20px;}
+    .page-head{align-items:flex-start;flex-direction:column;gap:6px;}
+    .toolbar{align-items:stretch;flex-direction:column;}
+    .search{min-width:0;}
+    table,thead,tbody,tr,th,td{display:block;}
+    thead{display:none;}
+    tr.patient-row{padding:12px 14px;border-bottom:1px solid var(--border);}
+    td{border-bottom:none;padding:5px 0;}
+    .actions{justify-content:flex-start;margin-top:6px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo"><div class="logo-mark">M</div>MemoryLab <span>&nbsp;Clinical</span></div>
+  <nav class="nav">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="patients.html" class="active">Patients</a>
+    <a href="schedule.html">Schedule</a>
+  </nav>
+  <div class="topbar-right">
+    <div class="clinician-badge">
+      <div class="avatar">EV</div>
+      <div class="meta"><div class="name">Dr. E. Visser</div><div class="role">General Practitioner</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>Patients</h1>
+      <div class="subhead">Clinical directory for active memory check-in patients</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="toolbar">
+      <div class="search">
+        <span class="icon">&#8981;</span>
+        <input id="patientSearch" type="search" placeholder="Search by name, initials, education, or status">
+      </div>
+      <div class="filters" id="filterChips">
+        <div class="filter-chip active" data-filter="all">All</div>
+        <div class="filter-chip" data-filter="review">Needs review</div>
+        <div class="filter-chip" data-filter="due">Session due</div>
+        <div class="filter-chip" data-filter="stable">Stable</div>
+        <div class="filter-chip" data-filter="new">New</div>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Patient</th>
+          <th>Latest score</th>
+          <th>Trend</th>
+          <th>Flags</th>
+          <th style="text-align:right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="patientsTable"></tbody>
+    </table>
+    <div class="empty-state" id="emptyState">No patients match the current search and filter.</div>
+    <div class="count-note" id="countNote"></div>
+  </div>
+</div>
+
+<script src="mock-data.js"></script>
+<script>
+const ML = window.MemoryLabData;
+let activeFilter = 'all';
+let searchTerm = '';
+
+function profileUrl(patient) {
+  return 'patient_profile.html?patient=' + encodeURIComponent(patient.id);
+}
+
+function scheduleUrl(patient) {
+  return 'schedule.html?patient=' + encodeURIComponent(patient.id);
+}
+
+function trendLabel(patient) {
+  if (patient.trend === 'declining') return '<span class="trend declining"><span>&#8600;</span>Declining</span>';
+  if (patient.trend === 'new') return '<span class="trend new"><span>&#8226;</span>New</span>';
+  return '<span class="trend stable"><span>&#8594;</span>Stable</span>';
+}
+
+function patientBadges(patient) {
+  const badges = [];
+  if (patient.flagged) badges.push({ cls: 'review', label: 'Needs review' });
+  if (patient.due) badges.push({ cls: 'due', label: 'Session due' });
+  patient.dashboardBadges.forEach(badge => badges.push({ cls: badge.type, label: badge.label }));
+  if (patient.trend === 'new') badges.push({ cls: 'new', label: 'New baseline' });
+  if (!badges.length) badges.push({ cls: '', label: 'No active flags' });
+  return badges.map(badge => `<span class="badge ${badge.cls}">${badge.label}</span>`).join('');
+}
+
+function matchesFilter(patient) {
+  if (activeFilter === 'review') return patient.flagged;
+  if (activeFilter === 'due') return patient.due;
+  if (activeFilter === 'stable') return patient.trend === 'stable';
+  if (activeFilter === 'new') return patient.trend === 'new';
+  return true;
+}
+
+function matchesSearch(patient) {
+  if (!searchTerm) return true;
+  const edu = ML.educationFor(patient.educationCode);
+  const haystack = [
+    patient.name,
+    patient.initials,
+    edu.label,
+    edu.fullLabel,
+    patient.status,
+  ].join(' ').toLowerCase();
+  return haystack.includes(searchTerm);
+}
+
+function renderPatients() {
+  const rows = ML.patients.filter(patient => matchesFilter(patient) && matchesSearch(patient));
+  const tbody = document.getElementById('patientsTable');
+  const empty = document.getElementById('emptyState');
+  const count = document.getElementById('countNote');
+
+  tbody.innerHTML = rows.map(patient => {
+    const latest = ML.latestSession(patient);
+    const edu = ML.educationFor(patient.educationCode);
+    const sgma = Math.round(ML.sofToSGMA(latest.sof));
+
+    return `
+      <tr class="patient-row" onclick="window.location.href='${profileUrl(patient)}'">
+        <td>
+          <div class="patient-cell">
+            <div class="patient-initials">${patient.initials}</div>
+            <div>
+              <div class="p-name">${patient.name}</div>
+              <div class="p-meta">${patient.age} yrs &middot; ${edu.fullLabel} &middot; ${patient.status}</div>
+            </div>
+          </div>
+        </td>
+        <td>
+          <div class="score-main">${sgma}</div>
+          <div class="score-sub">SoF ${latest.sof.toFixed(2)} &middot; ${latest.date}</div>
+        </td>
+        <td>${trendLabel(patient)}</td>
+        <td><div class="badges">${patientBadges(patient)}</div></td>
+        <td>
+          <div class="actions" onclick="event.stopPropagation()">
+            <button class="btn-sm primary" onclick="window.location.href='${profileUrl(patient)}'">Open profile</button>
+            <button class="btn-sm" onclick="window.location.href='${scheduleUrl(patient)}'">Schedule</button>
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
+
+  empty.style.display = rows.length ? 'none' : 'block';
+  count.textContent = rows.length + ' of ' + ML.patients.length + ' patients shown';
+}
+
+document.getElementById('patientSearch').addEventListener('input', event => {
+  searchTerm = event.target.value.trim().toLowerCase();
+  renderPatients();
+});
+
+document.getElementById('filterChips').addEventListener('click', event => {
+  const chip = event.target.closest('.filter-chip');
+  if (!chip) return;
+  activeFilter = chip.dataset.filter;
+  document.querySelectorAll('.filter-chip').forEach(item => item.classList.toggle('active', item === chip));
+  renderPatients();
+});
+
+renderPatients();
+</script>
+</body>
+</html>
