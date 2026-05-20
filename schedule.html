@@ -61,17 +61,18 @@ body{font-family:'Segoe UI','Helvetica Neue',system-ui,sans-serif;background:var
 .patient-filter-btn{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--text-soft);padding:7px 13px;border:1px solid var(--border);border-radius:7px;background:var(--card);cursor:pointer;transition:all .15s;user-select:none;}
 .patient-filter-btn:hover{color:var(--navy);}
 .pf-badge{background:var(--navy);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;}
-.pf-dropdown{display:none;position:absolute;top:calc(100%+6px);left:0;background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-lg);width:230px;z-index:200;padding:6px;}
+.pf-dropdown{display:none;position:absolute;top:calc(100%+6px);left:0;background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-lg);width:260px;z-index:200;padding:6px;}
 .pf-dropdown.open{display:block;}
 .pf-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:7px;cursor:pointer;transition:background .12s;}
 .pf-item:hover{background:var(--bg);}
+.pf-search{padding:6px 4px 8px;border-bottom:1px solid var(--border);margin-bottom:4px;}
+.pf-search input{width:100%;border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:13px;font-family:inherit;outline:none;}
+.pf-search input:focus{border-color:var(--navy);}
+.pf-empty{font-size:12.5px;color:var(--text-faint);padding:10px 12px;}
 .pf-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
 .pf-name{font-size:13px;font-weight:600;color:var(--text);flex:1;}
 .pf-check{width:16px;height:16px;border:1.5px solid var(--border);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;background:#fff;transition:all .12s;}
 .pf-item.selected .pf-check{background:var(--navy);border-color:var(--navy);}
-.legend-wrap{display:flex;align-items:center;gap:12px;margin-left:auto;flex-wrap:wrap;}
-.legend-item{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text-soft);}
-.legend-dot{width:10px;height:10px;border-radius:50%;}
 
 /* ── main grid ── */
 .cal-grid{display:grid;grid-template-columns:1fr 300px;gap:18px;align-items:start;}
@@ -180,7 +181,7 @@ body{font-family:'Segoe UI','Helvetica Neue',system-ui,sans-serif;background:var
 .form-field label{display:block;font-size:12px;font-weight:600;color:var(--text-soft);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;}
 .form-field select,.form-field input,.form-field textarea{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;color:var(--text);outline:none;transition:border .15s;}
 .form-field select:focus,.form-field input:focus,.form-field textarea:focus{border-color:var(--navy);}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
 .modal-foot{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;}
 .btn-cancel{background:#fff;border:1px solid var(--border);color:var(--text-soft);padding:9px 18px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;}
 .btn-cancel:hover{background:var(--bg);}
@@ -242,7 +243,6 @@ body{font-family:'Segoe UI','Helvetica Neue',system-ui,sans-serif;background:var
         <!-- filled by JS -->
       </div>
     </div>
-    <div class="legend-wrap" id="legendWrap"></div>
   </div>
 
   <!-- main cal + side panel -->
@@ -326,8 +326,12 @@ body{font-family:'Segoe UI','Helvetica Neue',system-ui,sans-serif;background:var
           <input type="date" id="mDate">
         </div>
         <div class="form-field">
-          <label>Time</label>
-          <input type="time" id="mTime" value="10:00">
+          <label>Start time</label>
+          <input type="time" id="mStartTime" value="10:00">
+        </div>
+        <div class="form-field">
+          <label>End time</label>
+          <input type="time" id="mEndTime" value="11:00">
         </div>
       </div>
       <div class="form-field">
@@ -350,6 +354,8 @@ const ML = window.MemoryLabData;
 ════════════════════════════════════════════════════════ */
 const TODAY = ML.TODAY;
 const PATIENTS = ML.patients;
+const PATIENT_EVENT_COLOR = '#4A6FA5';
+const PATIENT_FILTER_LIMIT = 5;
 
 let EVENTS = ML.cloneEvents();
 
@@ -361,6 +367,7 @@ let currentView = 'month';
 let showSessions= true;
 let showClinic  = true;
 let selectedPats= new Set(); // empty = all
+let patientFilterSearch = '';
 let selectedDay = null;
 let selectedEvt = null;
 
@@ -393,8 +400,20 @@ function eventTitle(e){
 
 function eventColour(e){
   if(e.type==='clinic') return 'var(--navy-soft)';
-  const p=patientOf(e);
-  return p ? p.colour : '#888';
+  return PATIENT_EVENT_COLOR;
+}
+
+function addOneHour(timeString){
+  if(!timeString || !timeString.includes(':')) return '';
+  const [h,m]=timeString.split(':').map(Number);
+  if(Number.isNaN(h)||Number.isNaN(m)) return '';
+  const d=new Date(2026,0,1,h,m);
+  d.setHours(d.getHours()+1);
+  return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+
+function formatEventTime(e){
+  return e.endTime ? `${e.time}-${e.endTime}` : e.time;
 }
 
 /* ════════════════════════════════════════════════════════
@@ -486,7 +505,7 @@ function renderMonth(){
           `border:1.5px dashed;color:${getComputedColor(e.pid)};font-size:11px;font-weight:600;padding:2px 7px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;` :
           `background:${getComputedColor(e.pid)};color:#fff;font-size:11px;font-weight:600;padding:2px 7px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;opacity:${e.status==='completed'?'.55':'1'}`);
       }
-      pill.textContent=eventTitle(e);
+      pill.textContent=eventTitle(e)+' '+formatEventTime(e);
       pill.onclick=(ev)=>{ev.stopPropagation();selectEvent(e,d);};
       evtWrap.appendChild(pill);
     });
@@ -503,10 +522,8 @@ function renderMonth(){
   }
 }
 
-const PAT_CSS_VARS=['#4A6FA5','#7B5EA7','#2E8B72','#C17D2A','#3D7FB5','#8B5A6E'];
 function getComputedColor(pid){
-  const idx = ML.patientIndex(pid);
-  return idx>=0&&idx<PAT_CSS_VARS.length?PAT_CSS_VARS[idx]:'#5D6475';
+  return PATIENT_EVENT_COLOR;
 }
 
 /* ════════════════════════════════════════════════════════
@@ -558,7 +575,7 @@ function renderWeek(){
         ev.style.color='#fff';
         ev.style.opacity=e.status==='completed'?'.6':'1';
       }
-      ev.innerHTML=`<div class="we-title">${eventTitle(e)}</div><div class="we-time">${e.time}${e.type==='session'?` · Sess ${e.id}`:''}</div>`;
+      ev.innerHTML=`<div class="we-title">${eventTitle(e)}</div><div class="we-time">${formatEventTime(e)}${e.type==='session'?` · Sess ${e.id}`:''}</div>`;
       ev.onclick=(ev2)=>{ev2.stopPropagation();selectEvent(e,d);};
       col.appendChild(ev);
     });
@@ -592,7 +609,7 @@ function showDayAgenda(d){
     bd.innerHTML=`
       <div class="ai-title">${e.type==='clinic'?e.title:(p?p.name:'Unknown')}</div>
       <div class="ai-sub">${e.type==='session'?`Session ${e.id} · ${p?p.age+' yrs':''}`:''}</div>
-      <div class="ai-time">${e.time}${e.note?` · ${e.note}`:''}</div>
+      <div class="ai-time">${formatEventTime(e)}${e.note?` · ${e.note}`:''}</div>
       ${e.status==='overdue'?'<span class="ai-badge" style="background:#FBF1E3;color:#C77B30;">Session overdue</span>':''}
       ${e.status==='completed'?'<span class="ai-badge" style="background:#EAF2F0;color:#3B7D6E;">Completed</span>':''}
     `;
@@ -631,6 +648,7 @@ function showPatientPanel(e){
         <div class="pd-metric"><div class="pm-label">SoF</div><div class="pm-val">${latest.sof.toFixed(2)}</div></div>
         <div class="pd-metric"><div class="pm-label">Session</div><div class="pm-val">#${e.id}</div></div>
       </div>
+      <div style="padding:0 18px 12px;font-size:12.5px;color:var(--text-soft);">&#x1F550; ${formatEventTime(e)}${e.note?` &middot; ${e.note}`:''}</div>
       <div class="pd-timeline">
         ${recentSess.map(s=>`
           <div class="pd-sess">
@@ -652,7 +670,7 @@ function showClinicEventPanel(e,d){
     <div class="sp-card">
       <div class="sp-head"><h3>${e.title}</h3><span class="sp-date">${fmtDate(d)}</span></div>
       <div style="padding:16px 18px;">
-        <div style="font-size:13px;color:var(--text-soft);margin-bottom:8px;">&#x1F550; ${e.time}</div>
+        <div style="font-size:13px;color:var(--text-soft);margin-bottom:8px;">&#x1F550; ${formatEventTime(e)}</div>
         ${e.note?`<div style="font-size:13px;color:var(--text);background:var(--bg);border-radius:8px;padding:12px 14px;border-left:3px solid var(--navy-soft);">${e.note}</div>`:'<div style="font-size:13px;color:var(--text-faint);font-style:italic;">No notes added.</div>'}
       </div>
       <div class="pd-foot"><button class="btn-sm" onclick="resetSidePanel()">&#8592; Back to agenda</button></div>
@@ -710,16 +728,41 @@ function togglePatient(pid){
 
 function renderPFDropdown(){
   const dd=document.getElementById('pfDropdown');
+  const q=patientFilterSearch.trim().toLowerCase();
+  const matches=PATIENTS.filter(p=>{
+    const edu=ML.educationFor(p.educationCode);
+    return [
+      p.name,
+      p.initials,
+      edu.label,
+      edu.fullLabel,
+      p.status,
+    ].join(' ').toLowerCase().includes(q);
+  }).slice(0,PATIENT_FILTER_LIMIT);
+
   dd.innerHTML=`<div class="pf-item" onclick="clearPatientFilter()" style="border-bottom:1px solid var(--border);margin-bottom:4px;">
     <div class="pf-dot" style="background:var(--text-faint);"></div>
     <div class="pf-name" style="color:var(--text-soft);">All patients</div>
+  </div>
+  <div class="pf-search" onclick="event.stopPropagation()">
+    <input id="pfSearchInput" type="search" value="${patientFilterSearch}" placeholder="Search patient..." oninput="updatePatientFilterSearch(this.value)">
   </div>`+
-  PATIENTS.map(p=>`
+  (matches.length ? matches.map(p=>`
     <div class="pf-item ${selectedPats.has(p.id)?'selected':''}" onclick="togglePatient('${p.id}')">
       <div class="pf-dot" style="background:${getComputedColor(p.id)};"></div>
       <div class="pf-name">${p.name}</div>
       <div class="pf-check">${selectedPats.has(p.id)?'&#10003;':''}</div>
-    </div>`).join('');
+    </div>`).join('') : '<div class="pf-empty">No patients found.</div>');
+}
+
+function updatePatientFilterSearch(value){
+  patientFilterSearch=value;
+  renderPFDropdown();
+  const input=document.getElementById('pfSearchInput');
+  if(input){
+    input.focus();
+    input.setSelectionRange(input.value.length,input.value.length);
+  }
 }
 
 function clearPatientFilter(){
@@ -730,32 +773,21 @@ function clearPatientFilter(){
   if(selectedDay) showDayAgenda(selectedDay);
 }
 
-function renderLegend(){
-  const wrap=document.getElementById('legendWrap');
-  wrap.innerHTML=PATIENTS.map(p=>`
-    <div class="legend-item">
-      <div class="legend-dot" style="background:${getComputedColor(p.id)};"></div>
-      ${p.name.split(' ')[0]}
-    </div>`).join('')+`
-    <div class="legend-item">
-      <div class="legend-dot" style="background:var(--navy-soft);border-radius:2px;"></div>
-      My appts
-    </div>`;
-}
-
 /* ════════════════════════════════════════════════════════
    MODAL
 ════════════════════════════════════════════════════════ */
 let modalType='session';
-function openModal(){ openModalWithDate(TODAY,'10:00'); }
-function openModalWithDate(d,time){
+function openModal(){ setModalType('session'); openModalWithDate(TODAY,'10:00'); }
+function openModalWithDate(d,time,patientId){
   const fmt=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const startTime=time||'10:00';
   document.getElementById('mDate').value=fmt;
-  document.getElementById('mTime').value=time||'10:00';
+  document.getElementById('mStartTime').value=startTime;
+  document.getElementById('mEndTime').value=addOneHour(startTime);
   document.getElementById('mNotes').value='';
-  // Populate patient select
   const sel=document.getElementById('mPatient');
-  sel.innerHTML='<option value="">Select patient…</option>'+PATIENTS.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  sel.innerHTML='<option value="">Select patient...</option>'+PATIENTS.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  if(patientId) sel.value=patientId;
   document.getElementById('modalOverlay').classList.add('open');
 }
 function closeModal(){ document.getElementById('modalOverlay').classList.remove('open'); }
@@ -769,17 +801,18 @@ function setModalType(t){
 }
 function saveEvent(){
   const dateVal=document.getElementById('mDate').value;
-  const timeVal=document.getElementById('mTime').value;
-  if(!dateVal||!timeVal){alert('Please fill in date and time.'); return;}
+  const timeVal=document.getElementById('mStartTime').value;
+  const endTimeVal=document.getElementById('mEndTime').value;
+  if(!dateVal||!timeVal){alert('Please fill in date and start time.'); return;}
   const [y,m,d]=dateVal.split('-').map(Number);
   const newDate=new Date(y,m-1,d);
   if(modalType==='session'){
     const pid=document.getElementById('mPatient').value;
     if(!pid){alert('Please select a patient.'); return;}
-    EVENTS.push({id:EVENTS.length+1,type:'session',pid,date:newDate,time:timeVal,status:'confirmed',note:document.getElementById('mNotes').value});
+    EVENTS.push({id:EVENTS.length+1,type:'session',pid,date:newDate,time:timeVal,endTime:endTimeVal,status:'confirmed',note:document.getElementById('mNotes').value});
   } else {
     const title=document.getElementById('mTitle').value||'Appointment';
-    EVENTS.push({id:EVENTS.length+1,type:'clinic',pid:null,date:newDate,time:timeVal,title,status:'confirmed',note:document.getElementById('mNotes').value});
+    EVENTS.push({id:EVENTS.length+1,type:'clinic',pid:null,date:newDate,time:timeVal,endTime:endTimeVal,title,status:'confirmed',note:document.getElementById('mNotes').value});
   }
   closeModal();
   if(currentView==='month') renderMonth(); else renderWeek();
@@ -789,7 +822,13 @@ function saveEvent(){
 /* ════════════════════════════════════════════════════════
    INIT
 ════════════════════════════════════════════════════════ */
-const initialPatientId = new URLSearchParams(window.location.search).get('patient');
+document.getElementById('mStartTime').addEventListener('change', e=>{
+  document.getElementById('mEndTime').value=addOneHour(e.target.value);
+});
+
+const scheduleParams = new URLSearchParams(window.location.search);
+const initialPatientId = scheduleParams.get('patient');
+const initialAction = scheduleParams.get('action');
 if(initialPatientId && ML.getPatient(initialPatientId).id === initialPatientId){
   selectedPats.add(initialPatientId);
   const badge=document.getElementById('pfBadge');
@@ -797,10 +836,13 @@ if(initialPatientId && ML.getPatient(initialPatientId).id === initialPatientId){
   badge.textContent=selectedPats.size;
 }
 renderPFDropdown();
-renderLegend();
 updateMonthLabel();
 renderMonth();
 showDayAgenda(TODAY);
+if(initialAction==='new-session' && initialPatientId && ML.getPatient(initialPatientId).id === initialPatientId){
+  setModalType('session');
+  openModalWithDate(TODAY,'10:00',initialPatientId);
+}
 </script>
 </body>
 </html>

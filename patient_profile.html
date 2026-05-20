@@ -82,6 +82,11 @@
   .qm .qm-value{font-size:20px;font-weight:700;color:var(--navy);margin-top:5px;line-height:1;}
   .qm .qm-note{font-size:11px;color:var(--text-faint);margin-top:5px;}
   .qm .qm-value.ok{color:var(--good);}
+  .quality-history{margin-top:16px;padding-top:16px;border-top:1px solid var(--border);}
+  .quality-history-title{font-size:11px;color:var(--text-soft);text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:10px;}
+  .quality-history-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+  .qm.compact{padding:11px 13px;background:#FAFAFB;}
+  .qm.compact .qm-value{font-size:18px;}
 
   /* score triple */
   .score-triple{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px;}
@@ -253,6 +258,27 @@
               </div>
               <div class="qm-value ok">8:12</div>
               <div class="qm-note">Completed in full</div>
+            </div>
+          </div>
+          <div class="quality-history">
+            <div class="quality-history-title">Session quality over time</div>
+            <div class="quality-history-metrics">
+              <div class="qm compact">
+                <div class="qm-label">Avg trials</div>
+                <div class="qm-value" id="avgTrialsVal">-</div>
+              </div>
+              <div class="qm compact">
+                <div class="qm-label">Interrupted sessions</div>
+                <div class="qm-value" id="interruptedSessionsVal">-</div>
+              </div>
+              <div class="qm compact">
+                <div class="qm-label">Avg non-retrieval</div>
+                <div class="qm-value" id="avgNonRetrievalVal">-</div>
+              </div>
+              <div class="qm compact">
+                <div class="qm-label">Avg session length</div>
+                <div class="qm-value" id="avgSessionLengthVal">-</div>
+              </div>
             </div>
           </div>
         </div>
@@ -543,6 +569,48 @@ function trendDescription(patient) {
   return patient.name + "'s SGMA score " + patient.trendSummary;
 }
 
+function parseDurationToSeconds(duration) {
+  if (!duration || !duration.includes(':')) return null;
+  const parts = duration.split(':').map(Number);
+  if (parts.length !== 2 || parts.some(Number.isNaN)) return null;
+  return parts[0] * 60 + parts[1];
+}
+
+function formatSecondsAsDuration(seconds) {
+  if (seconds === null || Number.isNaN(seconds)) return '-';
+  const rounded = Math.round(seconds);
+  const minutes = Math.floor(rounded / 60);
+  const secs = String(rounded % 60).padStart(2, '0');
+  return minutes + ':' + secs;
+}
+
+function average(values) {
+  const valid = values.filter(value => typeof value === 'number' && !Number.isNaN(value));
+  if (!valid.length) return null;
+  return valid.reduce((sum, value) => sum + value, 0) / valid.length;
+}
+
+function renderQualityHistory() {
+  const sessions = SELECTED_PATIENT.sessions || [];
+  if (!sessions.length) {
+    setText('#avgTrialsVal', '-');
+    setText('#interruptedSessionsVal', '-');
+    setText('#avgNonRetrievalVal', '-');
+    setText('#avgSessionLengthVal', '-');
+    return;
+  }
+
+  const avgTrials = average(sessions.map(session => session.trials));
+  const interrupted = sessions.filter(session => session.interruptions > 0).length;
+  const avgNonRetrieval = average(sessions.map(session => session.nonRetrievalTime));
+  const avgLength = average(sessions.map(session => parseDurationToSeconds(session.duration)));
+
+  setText('#avgTrialsVal', avgTrials === null ? '-' : Math.round(avgTrials));
+  setText('#interruptedSessionsVal', interrupted + ' of ' + sessions.length);
+  setText('#avgNonRetrievalVal', avgNonRetrieval === null ? '-' : avgNonRetrieval.toFixed(1) + 's');
+  setText('#avgSessionLengthVal', formatSecondsAsDuration(avgLength));
+}
+
 function renderProfileShell() {
   SELECTED_PATIENT = ML.getPatientFromUrl();
   PATIENT = { age: SELECTED_PATIENT.age, observedSoF: ML.latestSession(SELECTED_PATIENT).sof };
@@ -565,7 +633,7 @@ function renderProfileShell() {
   `);
 
   const scheduleButton = document.querySelector('.ph-actions .btn-outline');
-  if (scheduleButton) scheduleButton.onclick = () => { window.location.href = 'schedule.html?patient=' + SELECTED_PATIENT.id; };
+  if (scheduleButton) scheduleButton.onclick = () => { window.location.href = 'schedule.html?patient=' + SELECTED_PATIENT.id + '&action=new-session'; };
   const patientButton = document.querySelector('.ph-actions .btn-primary');
   if (patientButton) patientButton.onclick = () => { window.location.href = patientViewUrl(SELECTED_PATIENT); };
 
@@ -594,6 +662,7 @@ function renderProfileShell() {
     if (note) note.textContent = latest.quality === 'caution' ? 'Review quality notes' : 'Completed in full';
   }
 
+  renderQualityHistory();
   setText('#scoreSubtitle', 'Latest session · SoF ' + latest.sof.toFixed(2) + ' · ' + latest.fullDate);
   const sofCard = document.querySelectorAll('.score-triple .st-card')[2];
   if (sofCard) sofCard.querySelector('.st-value').textContent = latest.sof.toFixed(2);
