@@ -166,8 +166,20 @@ function patientBadges(patient) {
   if (patient.due) badges.push({ cls: 'due', label: 'Session due' });
   patient.dashboardBadges.forEach(badge => badges.push({ cls: badge.type, label: badge.label }));
   if (patient.trend === 'new') badges.push({ cls: 'new', label: 'New baseline' });
-  if (!badges.length) badges.push({ cls: '', label: 'No active flags' });
-  return badges.map(badge => `<span class="badge ${badge.cls}">${badge.label}</span>`).join('');
+  const uniqueBadges = badges.filter((badge, index, all) => all.findIndex(item => item.label === badge.label) === index);
+  if (!uniqueBadges.length) uniqueBadges.push({ cls: '', label: 'No active flags' });
+  return uniqueBadges.map(badge => `<span class="badge ${badge.cls}">${badge.label}</span>`).join('');
+}
+
+function searchableLabels(patient) {
+  const labels = [];
+  if (patient.flagged) labels.push('needs review');
+  if (patient.due) labels.push('session due');
+  if (patient.trend === 'declining') labels.push('declining needs review');
+  if (patient.trend === 'stable') labels.push('stable');
+  if (patient.trend === 'new') labels.push('new baseline');
+  patient.dashboardBadges.forEach(badge => labels.push(badge.label));
+  return labels.join(' ');
 }
 
 function matchesFilter(patient) {
@@ -187,6 +199,8 @@ function matchesSearch(patient) {
     edu.label,
     edu.fullLabel,
     patient.status,
+    patient.trend,
+    searchableLabels(patient),
   ].join(' ').toLowerCase();
   return haystack.includes(searchTerm);
 }
