@@ -19,7 +19,7 @@ body{font-family:'Segoe UI','Helvetica Neue',system-ui,sans-serif;background:var
 
 /* ── topbar ── */
 .topbar{background:var(--navy);color:#fff;height:56px;display:flex;align-items:center;padding:0 28px;gap:32px;flex-shrink:0;}
-.logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:15px;}
+.logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:15px;cursor:pointer;}
 .logo-mark{width:24px;height:24px;background:var(--red);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;}
 .logo span{color:#B9BECE;font-weight:400;}
 .nav{display:flex;gap:4px;margin-left:12px;}
@@ -192,7 +192,7 @@ body{font-family:'Segoe UI','Helvetica Neue',system-ui,sans-serif;background:var
 
 <!-- topbar -->
 <div class="topbar">
-  <div class="logo"><div class="logo-mark">M</div>MemoryLab <span>&nbsp;Clinical</span></div>
+  <div class="logo" onclick="window.location.href='dashboard.html'" role="link" tabindex="0" onkeydown="if(event.key==='Enter') window.location.href='dashboard.html'"><div class="logo-mark">M</div>MemoryLab <span>&nbsp;Clinical</span></div>
   <nav class="nav">
     <a href="dashboard.html">Dashboard</a>
     <a href="patients.html">Patients</a>

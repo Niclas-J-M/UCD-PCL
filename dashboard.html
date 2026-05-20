@@ -50,6 +50,7 @@
     font-weight: 700;
     font-size: 15px;
     letter-spacing: 0.2px;
+    cursor: pointer;
   }
   .logo-mark {
     width: 24px; height: 24px;
@@ -465,7 +466,7 @@
 
 <!-- ─── Top Navigation ─────────────────────────────────────── -->
 <div class="topbar">
-  <div class="logo">
+  <div class="logo" onclick="window.location.href='dashboard.html'" role="link" tabindex="0" onkeydown="if(event.key==='Enter') window.location.href='dashboard.html'">
     <div class="logo-mark">M</div>
     MemoryLab <span>&nbsp;Clinical</span>
   </div>
