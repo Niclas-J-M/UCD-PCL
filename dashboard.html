@@ -230,6 +230,38 @@
     gap: 14px;
     padding: 18px 20px;
   }
+  .patients-empty {
+    padding: 28px 20px;
+    text-align: center;
+    color: var(--text-soft);
+    font-size: 13px;
+  }
+  .patient-grid-foot {
+    padding: 12px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    background: #FAFAFB;
+  }
+  .patient-count {
+    font-size: 12.5px;
+    color: var(--text-soft);
+  }
+  .patient-link {
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--navy);
+    border-radius: 7px;
+    padding: 7px 11px;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .patient-link:hover { background: var(--bg); border-color: var(--text-faint); }
   .patient-card {
     border: 1px solid var(--border);
     border-radius: 10px;
@@ -524,11 +556,11 @@
     <!-- LEFT: patient grid -->
     <div class="panel">
       <div class="panel-head">
-        <h2>My patients</h2>
+        <h2 class="patients-title" onclick="window.location.href='patients.html'" role="link" tabindex="0" onkeydown="if(event.key==='Enter') window.location.href='patients.html'" style="cursor:pointer;">My patients</h2>
         <div class="filters">
-          <div class="filter-chip active">All</div>
-          <div class="filter-chip">Needs review</div>
-          <div class="filter-chip">Session due</div>
+          <div class="filter-chip active" data-filter="all">All</div>
+          <div class="filter-chip" data-filter="review">Needs review</div>
+          <div class="filter-chip" data-filter="due">Session due</div>
         </div>
       </div>
 
@@ -691,6 +723,10 @@
         </a>
 
       </div>
+      <div class="patient-grid-foot">
+        <div class="patient-count" id="patientGridCount"></div>
+        <button class="patient-link" onclick="window.location.href='patients.html'">View all patients</button>
+      </div>
 
       <!-- legend -->
       <div class="legend">
@@ -795,6 +831,8 @@
 <script src="mock-data.js"></script>
 <script>
 const ML = window.MemoryLabData;
+const DASHBOARD_PATIENT_LIMIT = 6;
+let activePatientFilter = 'all';
 
 function trendHtml(trend) {
   if (trend === 'declining') return '<span class="trend declining"><span class="arrow">&#8600;</span> Declining</span>';
@@ -813,7 +851,24 @@ function renderPatientGrid() {
   const grid = document.querySelector('.patient-grid');
   if (!grid) return;
 
-  grid.innerHTML = ML.patients.map(patient => {
+  const matchingPatients = ML.patients.filter(patient => {
+    if (activePatientFilter === 'review') return patient.flagged;
+    if (activePatientFilter === 'due') return patient.due;
+    return true;
+  });
+  const visiblePatients = matchingPatients.slice(0, DASHBOARD_PATIENT_LIMIT);
+
+  document.querySelectorAll('.filters .filter-chip').forEach(chip => {
+    chip.classList.toggle('active', chip.dataset.filter === activePatientFilter);
+  });
+
+  if (!visiblePatients.length) {
+    grid.innerHTML = '<div class="patients-empty" style="grid-column:1/-1;">No patients match this dashboard filter.</div>';
+    updatePatientGridCount(0, matchingPatients.length);
+    return;
+  }
+
+  grid.innerHTML = visiblePatients.map(patient => {
     const latest = ML.latestSession(patient);
     const sgma = Math.round(ML.sofToSGMA(latest.sof));
     const marker = ML.dashboardMarkerPercent(patient);
@@ -845,6 +900,28 @@ function renderPatientGrid() {
         </div>
       </a>`;
   }).join('');
+  updatePatientGridCount(visiblePatients.length, matchingPatients.length);
+}
+
+function updatePatientGridCount(visibleCount, totalCount) {
+  const count = document.getElementById('patientGridCount');
+  if (!count) return;
+  if (activePatientFilter === 'review') {
+    count.textContent = `Showing ${visibleCount} of ${totalCount} patients needing review`;
+  } else if (activePatientFilter === 'due') {
+    count.textContent = `Showing ${visibleCount} of ${totalCount} patients with sessions due`;
+  } else {
+    count.textContent = `Showing ${visibleCount} of ${totalCount} patients`;
+  }
+}
+
+function setupPatientFilters() {
+  document.querySelectorAll('.filters .filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      activePatientFilter = chip.dataset.filter || 'all';
+      renderPatientGrid();
+    });
+  });
 }
 
 function renderUpcomingSessions() {
@@ -894,6 +971,7 @@ function renderReminders() {
 }
 
 window.addEventListener('load', () => {
+  setupPatientFilters();
   renderDashboardSummary();
   renderPatientGrid();
   renderUpcomingSessions();
