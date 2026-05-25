@@ -3,27 +3,28 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MemoryLab — Patient Results View</title>
+<title>MemoryLab - Patient Results View</title>
 <style>
   :root {
     --red: #BE0A1E;
     --navy: #1A2340;
+    --navy-soft: #2B3658;
     --bg: #EEF1F5;
     --card: #FFFFFF;
     --border: #E4E7EC;
     --text: #283044;
     --text-soft: #5D6475;
-    --text-faint: #939AA8;
-    --calm: #4A6FA5;
-    --calm-soft: #EAF0F7;
-    --calm-mid: #D4E0EE;
-    --warm-soft: #F3EEE7;
-    --sage: #4F7A6A;
-    --sage-soft: #E9F1ED;
-    --shadow: 0 2px 10px rgba(26,35,64,0.06);
+    --text-faint: #8D95A6;
+    --blue: #4A6FA5;
+    --blue-deep: #2F5F9E;
+    --blue-soft: #EAF0F7;
+    --blue-mid: #D4E0EE;
+    --cream: #F6F2EB;
     --shadow-lg: 0 10px 40px rgba(26,35,64,0.10);
   }
+
   * { margin: 0; padding: 0; box-sizing: border-box; }
+
   body {
     font-family: 'Segoe UI', 'Helvetica Neue', system-ui, sans-serif;
     background: var(--bg);
@@ -34,30 +35,30 @@
     flex-direction: column;
   }
 
-  /* ─── Slim "presentation mode" bar (for the GP) ──────────── */
   .present-bar {
     background: var(--navy);
     color: #fff;
-    height: 46px;
+    min-height: 46px;
     display: flex;
     align-items: center;
-    padding: 0 24px;
+    padding: 8px 24px;
     gap: 14px;
     flex-shrink: 0;
   }
-  .present-bar .mode-tag {
+  .mode-tag {
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.6px;
     background: rgba(255,255,255,0.14);
     padding: 4px 10px;
     border-radius: 5px;
+    white-space: nowrap;
   }
-  .present-bar .mode-note {
+  .mode-note {
     font-size: 12.5px;
     color: #AEB4C6;
   }
-  .present-bar .back-btn {
+  .back-btn {
     margin-left: auto;
     background: rgba(255,255,255,0.10);
     border: 1px solid rgba(255,255,255,0.18);
@@ -68,336 +69,690 @@
     border-radius: 7px;
     cursor: pointer;
     transition: background 0.15s;
+    white-space: nowrap;
   }
-  .present-bar .back-btn:hover { background: rgba(255,255,255,0.18); }
+  .back-btn:hover { background: rgba(255,255,255,0.18); }
 
-  /* ─── Stage ──────────────────────────────────────────────── */
   .stage {
     flex: 1;
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    padding: 36px 24px 48px;
+    padding: 30px 22px 44px;
   }
   .sheet {
     width: 100%;
-    max-width: 760px;
+    max-width: 940px;
     background: var(--card);
-    border-radius: 20px;
+    border-radius: 18px;
     box-shadow: var(--shadow-lg);
     overflow: hidden;
   }
 
-  /* ─── Sheet header ───────────────────────────────────────── */
   .sheet-head {
     background: linear-gradient(135deg, #1A2340 0%, #2B3658 100%);
     color: #fff;
-    padding: 30px 40px 28px;
-    position: relative;
+    padding: 28px 40px 26px;
   }
-  .sheet-head .logo-mini {
-    display: flex; align-items: center; gap: 7px;
-    font-size: 12.5px; font-weight: 600;
+  .logo-mini {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12.5px;
+    font-weight: 600;
     color: #B9BECE;
-    margin-bottom: 18px;
+    margin-bottom: 16px;
   }
-  .sheet-head .logo-mini .mk {
-    width: 18px; height: 18px; background: var(--red);
-    border-radius: 5px; display: flex; align-items: center;
-    justify-content: center; font-size: 10px; font-weight: 800; color: #fff;
+  .mk {
+    width: 18px;
+    height: 18px;
+    background: var(--red);
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 800;
+    color: #fff;
   }
   .sheet-head h1 {
-    font-size: 26px;
+    font-size: 30px;
     font-weight: 700;
-    letter-spacing: -0.3px;
-    margin-bottom: 6px;
+    letter-spacing: -0.2px;
+    margin-bottom: 7px;
   }
-  .sheet-head .subtitle {
-    font-size: 14.5px;
+  .subtitle {
+    font-size: 15px;
     color: #C5CAD8;
+    line-height: 1.45;
+  }
+
+  .sheet-body { padding: 30px 40px 38px; }
+
+  .top-summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 20px;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+  .takeaway {
+    background: var(--blue-soft);
+    border: 1px solid #DCE7F3;
+    border-radius: 14px;
+    padding: 20px 24px;
+    color: var(--navy);
+    font-size: 19px;
+    line-height: 1.5;
+    font-weight: 650;
+  }
+  .takeaway .soft {
+    color: var(--blue-deep);
+    white-space: nowrap;
+  }
+  .mini-score {
+    min-width: 168px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 20px;
+    text-align: center;
+  }
+  .mini-score .label {
+    color: var(--text-soft);
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+  .mini-score .value {
+    color: var(--navy);
+    font-size: 38px;
+    font-weight: 750;
+    line-height: 1;
+  }
+  .mini-score .sub {
+    color: var(--text-faint);
+    font-size: 12.5px;
+    margin-top: 8px;
+  }
+
+  .chart-panel {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: #FBFCFD;
+    padding: 22px;
+    margin-bottom: 22px;
+  }
+  .chart-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 14px;
+  }
+  .chart-title h2 {
+    font-size: 18px;
+    color: var(--navy);
+    margin-bottom: 4px;
+  }
+  .chart-title p {
+    font-size: 13.5px;
+    line-height: 1.45;
+    color: var(--text-soft);
+  }
+  .toggles {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .toggle-btn {
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--text-soft);
+    border-radius: 8px;
+    padding: 8px 11px;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .toggle-btn:hover { border-color: #BFC8D5; color: var(--navy); }
+  .toggle-btn.active {
+    background: var(--navy);
+    border-color: var(--navy);
+    color: #fff;
+  }
+  .chart-wrap {
+    position: relative;
+    width: 100%;
+    height: 310px;
+  }
+  #patientChart {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .chart-legend {
+    display: flex;
+    gap: 22px;
+    flex-wrap: wrap;
+    border-top: 1px solid var(--border);
+    padding-top: 13px;
+    color: var(--text-soft);
+    font-size: 12.5px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .legend-line {
+    width: 24px;
+    height: 4px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--blue), #8CAED5);
+  }
+  .legend-band {
+    width: 24px;
+    height: 12px;
+    border-radius: 4px;
+    background: var(--blue-mid);
+  }
+
+  .reassurance-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+  .reassurance-card {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 18px 17px;
+    min-height: 138px;
+  }
+  .reassurance-card h3 {
+    color: var(--navy);
+    font-size: 16px;
+    margin-bottom: 9px;
+  }
+  .reassurance-card p {
+    color: var(--text-soft);
+    font-size: 14px;
     line-height: 1.5;
   }
 
-  /* ─── Sheet body ─────────────────────────────────────────── */
-  .sheet-body { padding: 32px 40px 38px; }
-
-  .section { margin-bottom: 30px; }
-  .section:last-child { margin-bottom: 0; }
-  .section-label {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--calm);
-    text-transform: uppercase;
-    letter-spacing: 0.7px;
-    margin-bottom: 14px;
-  }
-
-  /* ── Trajectory chart ── */
-  .chart-card {
-    background: #FBFCFD;
-    border: 1px solid var(--border);
+  .session-note {
+    background: var(--cream);
     border-radius: 14px;
-    padding: 22px 24px 18px;
-  }
-  .chart-card . cc-intro { }
-  .chart-svg {
-    width: 100%;
-    height: 210px;
-    display: block;
-    margin-bottom: 6px;
-  }
-  .chart-foot {
+    padding: 17px 20px;
+    color: var(--text-soft);
+    font-size: 14px;
+    line-height: 1.5;
     display: flex;
-    gap: 24px;
-    font-size: 12.5px;
-    color: var(--text-soft);
-    padding-top: 12px;
-    border-top: 1px solid var(--border);
+    gap: 14px;
+    align-items: flex-start;
   }
-  .chart-foot .item { display: flex; align-items: center; gap: 7px; }
-  .chart-foot .ln {
-    width: 22px; height: 3px; border-radius: 2px; background: var(--calm);
-  }
-  .chart-foot .bd {
-    width: 22px; height: 12px; border-radius: 3px; background: var(--calm-mid);
-  }
-
-  /* ── Plain-language summary ── */
-  .summary-statement {
-    background: var(--calm-soft);
-    border-radius: 14px;
-    padding: 22px 26px;
-    font-size: 17px;
-    line-height: 1.6;
-    color: var(--navy);
-    font-weight: 600;
-  }
-  .summary-statement .accent { color: var(--calm); }
-
-  /* ── What this means: two cards ── */
-  .means-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-  }
-  .means-card {
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 20px 22px;
-  }
-  .means-card .mc-icon {
-    width: 36px; height: 36px;
-    border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px; font-weight: 700;
-    margin-bottom: 13px;
-  }
-  .means-card.q1 .mc-icon { background: var(--calm-soft); color: var(--calm); }
-  .means-card.q2 .mc-icon { background: var(--sage-soft); color: var(--sage); }
-  .means-card .mc-q {
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--navy);
-    margin-bottom: 8px;
-  }
-  .means-card .mc-a {
-    font-size: 13.5px;
-    color: var(--text-soft);
-    line-height: 1.6;
-  }
-  .means-card .mc-a b { color: var(--text); }
-  .means-card ul {
-    list-style: none;
-    margin-top: 8px;
-  }
-  .means-card ul li {
-    font-size: 13.5px;
-    color: var(--text-soft);
-    line-height: 1.7;
-    padding-left: 18px;
-    position: relative;
-  }
-  .means-card ul li::before {
-    content: '';
-    position: absolute;
-    left: 2px; top: 9px;
-    width: 6px; height: 6px;
+  .note-dot {
+    width: 10px;
+    height: 10px;
+    background: var(--blue);
     border-radius: 50%;
-    background: var(--sage);
+    margin-top: 6px;
+    flex-shrink: 0;
+    opacity: 0.75;
   }
 
-  /* ── Next steps ── */
-  .next-card {
-    display: flex;
+  .term {
+    position: relative;
+    display: inline-flex;
     align-items: center;
-    gap: 20px;
-    background: var(--warm-soft);
-    border-radius: 14px;
-    padding: 20px 24px;
+    gap: 4px;
+    color: var(--navy);
+    border-bottom: 1px dotted #8AA5C7;
+    cursor: help;
+    font-weight: 650;
   }
-  .next-cal {
-    width: 56px; height: 56px;
+  .term::after {
+    content: attr(data-tip);
+    position: absolute;
+    left: 0;
+    bottom: calc(100% + 10px);
+    width: min(260px, 72vw);
+    padding: 10px 12px;
+    border-radius: 9px;
     background: var(--navy);
     color: #fff;
-    border-radius: 12px;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    flex-shrink: 0;
-    line-height: 1;
+    font-size: 12.5px;
+    line-height: 1.4;
+    font-weight: 500;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(4px);
+    transition: opacity 0.15s, transform 0.15s;
+    z-index: 4;
+    box-shadow: 0 8px 26px rgba(26,35,64,0.18);
   }
-  .next-cal . d { font-size: 22px; font-weight: 700; }
-  .next-cal .m {
-    font-size: 9.5px; text-transform: uppercase;
-    letter-spacing: 0.6px; margin-top: 3px;
+  .term:hover::after,
+  .term:focus::after {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
   }
-  .next-text { flex: 1; }
-  .next-text .nt-title {
-    font-size: 15px; font-weight: 700; color: var(--navy);
-    margin-bottom: 3px;
+
+  @media (max-width: 820px) {
+    .present-bar {
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 8px 12px;
+    }
+    .back-btn {
+      margin-left: 0;
+      width: 100%;
+    }
+    .stage { padding: 18px 12px 30px; }
+    .sheet { border-radius: 14px; }
+    .sheet-head { padding: 24px 24px 22px; }
+    .sheet-head h1 { font-size: 25px; }
+    .sheet-body { padding: 22px; }
+    .top-summary {
+      grid-template-columns: 1fr;
+    }
+    .mini-score {
+      text-align: left;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 4px 14px;
+    }
+    .mini-score .value {
+      grid-row: 1 / span 2;
+      grid-column: 2;
+      font-size: 34px;
+    }
+    .chart-top {
+      flex-direction: column;
+    }
+    .toggles {
+      justify-content: flex-start;
+    }
+    .chart-wrap { height: 260px; }
+    .reassurance-grid {
+      grid-template-columns: 1fr;
+    }
   }
-  .next-text .nt-sub {
-    font-size: 13.5px; color: var(--text-soft); line-height: 1.5;
+
+  @media (max-width: 520px) {
+    .takeaway { font-size: 17px; padding: 18px; }
+    .takeaway .soft { white-space: normal; }
+    .chart-panel { padding: 16px; }
+    .chart-wrap { height: 235px; }
+    .toggle-btn { flex: 1 1 100%; }
   }
 </style>
 </head>
 <body>
 
-<!-- ─── Presentation-mode bar (only the GP notices this) ────── -->
 <div class="present-bar">
   <span class="mode-tag">PATIENT VIEW</span>
   <span class="mode-note">This is what your patient sees</span>
-  <button class="back-btn" onclick="window.location.href='patient_profile.html'">&larr; Back to clinical view</button>
+  <button class="back-btn" id="backBtn">&lt; Back to clinical view</button>
 </div>
 
-<!-- ─── Stage ───────────────────────────────────────────────── -->
-<div class="stage">
-  <div class="sheet">
-
-    <!-- Header -->
-    <div class="sheet-head">
+<main class="stage">
+  <section class="sheet" aria-label="Patient memory check-in summary">
+    <header class="sheet-head">
       <div class="logo-mini">
         <div class="mk">M</div> MemoryLab
       </div>
-      <h1>How your memory check-ins are going, Anna</h1>
-      <div class="subtitle">
-        A look at your sessions together with Dr. Visser &middot; 14 May 2026
-      </div>
-    </div>
+      <h1 id="pageTitle">Memory check-in summary</h1>
+      <div class="subtitle" id="pageSubtitle">A simple overview to discuss together with your clinician.</div>
+    </header>
 
-    <!-- Body -->
     <div class="sheet-body">
+      <section class="top-summary" aria-label="Main result">
+        <div class="takeaway" id="takeawayText">
+          Your latest check-in is ready to review together.
+        </div>
+        <div class="mini-score">
+          <div class="label">
+            Latest <span class="term" tabindex="0" data-tip="A summary number from the memory check-in.">score</span>
+          </div>
+          <div class="value" id="latestScore">--</div>
+          <div class="sub" id="scoreSub">Latest session</div>
+        </div>
+      </section>
 
-      <!-- SECTION 1: trajectory over time -->
-      <div class="section">
-        <div class="section-label">Your memory over time</div>
-        <div class="chart-card">
-          <svg class="chart-svg" viewBox="0 0 680 210" preserveAspectRatio="none">
-            <!-- typical-range band -->
-            <rect x="50" y="58" width="600" height="74" fill="#D4E0EE" opacity="0.7"/>
-            <!-- soft gridlines -->
-            <line x1="50" y1="40"  x2="650" y2="40"  stroke="#EDEFF3" stroke-width="1"/>
-            <line x1="50" y1="95"  x2="650" y2="95"  stroke="#EDEFF3" stroke-width="1"/>
-            <line x1="50" y1="150" x2="650" y2="150" stroke="#EDEFF3" stroke-width="1"/>
-            <line x1="50" y1="175" x2="650" y2="175" stroke="#E4E7EC" stroke-width="1.5"/>
-
-            <!-- friendly y labels (no numbers) -->
-            <text x="42" y="52"  font-size="11" fill="#939AA8" text-anchor="end">Faster</text>
-            <text x="42" y="178" font-size="11" fill="#939AA8" text-anchor="end">Slower</text>
-
-            <!-- band label -->
-            <text x="60" y="52" font-size="11" fill="#4A6FA5" font-weight="600">Usual range for your age</text>
-
-            <!-- patient line - gentle upward drift -->
-            <polyline
-              points="80,150 165,148 250,142 335,138 420,128 505,118 590,104"
-              fill="none" stroke="#4A6FA5" stroke-width="3"
-              stroke-linejoin="round" stroke-linecap="round"/>
-            <!-- data points -->
-            <g fill="#4A6FA5">
-              <circle cx="80"  cy="150" r="4.5"/>
-              <circle cx="165" cy="148" r="4.5"/>
-              <circle cx="250" cy="142" r="4.5"/>
-              <circle cx="335" cy="138" r="4.5"/>
-              <circle cx="420" cy="128" r="4.5"/>
-              <circle cx="505" cy="118" r="4.5"/>
-            </g>
-            <!-- latest point highlighted -->
-            <circle cx="590" cy="104" r="7" fill="#4A6FA5" stroke="#fff" stroke-width="3"/>
-            <text x="590" y="90" font-size="11.5" fill="#1A2340" font-weight="700" text-anchor="middle">Today</text>
-
-            <!-- x labels -->
-            <text x="80"  y="198" font-size="11" fill="#939AA8" text-anchor="middle">January</text>
-            <text x="250" y="198" font-size="11" fill="#939AA8" text-anchor="middle">February</text>
-            <text x="420" y="198" font-size="11" fill="#939AA8" text-anchor="middle">March / April</text>
-            <text x="590" y="198" font-size="11" fill="#939AA8" text-anchor="middle">May</text>
-          </svg>
-          <div class="chart-foot">
-            <div class="item"><span class="ln"></span> Your results, session by session</div>
-            <div class="item"><span class="bd"></span> What's usual for your age group</div>
+      <section class="chart-panel" aria-label="Memory check-in graph">
+        <div class="chart-top">
+          <div class="chart-title">
+            <h2 id="chartHeading">Memory over time</h2>
+            <p id="chartDescription">Each dot is one check-in. Small changes from session to session are normal.</p>
+          </div>
+          <div class="toggles" aria-label="Choose graph">
+            <button class="toggle-btn active" type="button" data-mode="memory">Memory trend</button>
+            <button class="toggle-btn" type="button" data-mode="quality">Session quality</button>
+            <button class="toggle-btn" type="button" data-mode="forgetting">Forgetting speed</button>
           </div>
         </div>
-      </div>
-
-      <!-- SECTION 2: plain-language summary -->
-      <div class="section">
-        <div class="summary-statement">
-          Your memory results have stayed fairly steady, with a
-          <span class="accent">small, gradual change</span> over the last few months.
-          This is something Dr. Visser wants to <span class="accent">keep an eye on together with you</span> —
-          it is not a cause for alarm.
+        <div class="chart-wrap">
+          <canvas id="patientChart" aria-label="Selected patient graph"></canvas>
         </div>
-      </div>
-
-      <!-- SECTION 3: the two questions every patient asks -->
-      <div class="section">
-        <div class="section-label">What this means</div>
-        <div class="means-grid">
-
-          <div class="means-card q1">
-            <div class="mc-icon">?</div>
-            <div class="mc-q">Does this mean I have dementia?</div>
-            <div class="mc-a">
-              <b>No.</b> This check-in is not a diagnosis. It is a simple way for your
-              doctor to follow how your memory is doing over time, so anything worth
-              looking at is noticed early.
-            </div>
-          </div>
-
-          <div class="means-card q2">
-            <div class="mc-icon">&#10003;</div>
-            <div class="mc-q">What can I do?</div>
-            <div class="mc-a">A few everyday things support memory health:</div>
-            <ul>
-              <li>Staying socially and mentally active</li>
-              <li>Regular movement and good sleep</li>
-              <li>Keeping up your weekly check-ins</li>
-            </ul>
-          </div>
-
+        <div class="chart-legend">
+          <div class="legend-item"><span class="legend-line"></span> Your check-ins</div>
+          <div class="legend-item"><span class="legend-band"></span> Usual range for comparison</div>
         </div>
-      </div>
+      </section>
 
-      <!-- SECTION 4: what happens next -->
-      <div class="section">
-        <div class="section-label">What happens next</div>
-        <div class="next-card">
-          <div class="next-cal">
-            <div class="d">21</div>
-            <div class="m">May</div>
-          </div>
-          <div class="next-text">
-            <div class="nt-title">Your next check-in is on Wednesday 21 May</div>
-            <div class="nt-sub">
-              Dr. Visser will keep following your results with you. If anything
-              changes or you have questions before then, you can reach out any time.
-            </div>
-          </div>
+      <section class="reassurance-grid" aria-label="Important reminders">
+        <article class="reassurance-card">
+          <h3>Scores can vary</h3>
+          <p>Tiredness, stress, concentration, or an <span class="term" tabindex="0" data-tip="A break or pause during the session that can affect the result.">interruption</span> can change one session.</p>
+        </article>
+        <article class="reassurance-card">
+          <h3>Not a diagnosis</h3>
+          <p>This check-in does not by itself mean dementia or a serious condition.</p>
+        </article>
+        <article class="reassurance-card">
+          <h3>Your doctor adds context</h3>
+          <p>Your clinician can interpret this with your symptoms, history, and daily life.</p>
+        </article>
+      </section>
+
+      <section class="session-note" aria-label="Session note">
+        <div class="note-dot" aria-hidden="true"></div>
+        <div id="sessionNote">
+          A <span class="term" tabindex="0" data-tip="How this compares with people of a similar age and education level.">percentile</span> only helps compare groups. Your clinician will explain what it means for you.
         </div>
-      </div>
-
+      </section>
     </div>
-  </div>
-</div>
+  </section>
+</main>
 
+<script src="mock-data.js"></script>
+<script>
+const ML = window.MemoryLabData;
+const PATIENT = ML.getPatientFromUrl();
+const GRAPH = {
+  mode: 'memory',
+  canvas: null,
+  ctx: null,
+};
+
+function firstName(patient) {
+  return patient.name.split(' ')[0];
+}
+
+function latestScore(patient) {
+  return Math.round(ML.sofToSGMA(ML.latestSession(patient).sof));
+}
+
+function simplePercentile(patient) {
+  const score = latestScore(patient);
+  return Math.max(3, Math.min(97, Math.round(((score - 30) / 140) * 100)));
+}
+
+function interruptedCount(patient) {
+  return patient.sessions.filter(session => session.interruptions > 0).length;
+}
+
+function comparisonPhrase(percentile) {
+  if (percentile < 40) return 'slightly lower than expected';
+  if (percentile > 75) return 'higher than expected';
+  return 'within the expected range';
+}
+
+function trendTakeaway(patient) {
+  const percentile = simplePercentile(patient);
+  const comparison = comparisonPhrase(percentile);
+  const latest = ML.latestSession(patient);
+  const name = firstName(patient);
+
+  if (patient.trend === 'new') {
+    return name + "'s results are still building a baseline. A few more check-ins will make the pattern easier to understand.";
+  }
+
+  if (patient.trend === 'stable') {
+    return name + "'s memory score has stayed fairly steady, with normal small changes between sessions.";
+  }
+
+  if (latest.interruptions > 0) {
+    return name + "'s latest memory score was " + comparison + " for people of a similar age and education level, and the session had a pause. It is best discussed together.";
+  }
+
+  return name + "'s latest memory score was " + comparison + " for people of a similar age and education level. This is something to look at together, not a cause for alarm.";
+}
+
+function sessionNoteHtml(patient) {
+  const latest = ML.latestSession(patient);
+  const percentile = simplePercentile(patient);
+  const terms = {
+    percentile: '<span class="term" tabindex="0" data-tip="How this compares with people of a similar age and education level.">percentile</span>',
+    interruption: '<span class="term" tabindex="0" data-tip="A break or pause during the session that can affect the result.">interruption</span>',
+    speed: '<span class="term" tabindex="0" data-tip="How quickly remembered information faded during the check-in.">speed of forgetting</span>',
+  };
+
+  if (latest.interruptions > 0) {
+    return 'The latest session included an ' + terms.interruption + '. Scores can vary because of tiredness, stress, concentration, or pauses during the check-in.';
+  }
+
+  return 'This result is around the ' + percentile + 'th ' + terms.percentile + '. The ' + terms.speed + ' is one part of the picture, and your clinician will interpret it with you.';
+}
+
+function graphConfig(mode) {
+  if (mode === 'quality') {
+    return {
+      heading: 'Session quality',
+      description: 'This shows whether the check-ins were smooth enough to interpret comfortably.',
+      topLabel: 'Smoother',
+      bottomLabel: 'Less smooth',
+      band: [62, 88],
+      values: PATIENT.sessions.map(session => {
+        const interruptionPenalty = session.interruptions * 22;
+        const pacePenalty = Math.max(0, session.nonRetrievalTime - 3) * 6;
+        return Math.max(28, Math.min(96, 94 - interruptionPenalty - pacePenalty));
+      }),
+    };
+  }
+
+  if (mode === 'forgetting') {
+    return {
+      heading: 'Forgetting speed',
+      description: 'This gives a simple view of the speed of forgetting. Lower stress and better focus can affect it.',
+      topLabel: 'Slower',
+      bottomLabel: 'Faster',
+      band: [44, 72],
+      values: PATIENT.sessions.map(session => Math.max(10, Math.min(95, 100 - (session.sof * 150)))),
+    };
+  }
+
+  return {
+    heading: 'Memory over time',
+    description: 'Each dot is one check-in. Small changes from session to session are normal.',
+    topLabel: 'Higher',
+    bottomLabel: 'Lower',
+    band: [42, 72],
+    values: PATIENT.sessions.map(session => ML.sofToSGMA(session.sof)),
+  };
+}
+
+function fitCanvasToDisplay(canvas) {
+  const rect = canvas.getBoundingClientRect();
+  const ratio = window.devicePixelRatio || 1;
+  const width = Math.max(320, Math.round(rect.width * ratio));
+  const height = Math.max(220, Math.round(rect.height * ratio));
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width;
+    canvas.height = height;
+  }
+  return { width, height, ratio };
+}
+
+function drawChart() {
+  const canvas = GRAPH.canvas;
+  const ctx = GRAPH.ctx;
+  const cfg = graphConfig(GRAPH.mode);
+  const { width, height, ratio } = fitCanvasToDisplay(canvas);
+  const pad = {
+    left: 64 * ratio,
+    right: 34 * ratio,
+    top: 34 * ratio,
+    bottom: 48 * ratio,
+  };
+  const plotW = width - pad.left - pad.right;
+  const plotH = height - pad.top - pad.bottom;
+  const values = cfg.values;
+  const min = Math.min(...values, cfg.band[0]);
+  const max = Math.max(...values, cfg.band[1]);
+  const rangePad = Math.max(8, (max - min) * 0.28);
+  const yMin = min - rangePad;
+  const yMax = max + rangePad;
+  const xOf = index => values.length === 1 ? pad.left + plotW : pad.left + (index / (values.length - 1)) * plotW;
+  const yOf = value => pad.top + (1 - ((value - yMin) / (yMax - yMin))) * plotH;
+
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = '#FBFCFD';
+  ctx.fillRect(0, 0, width, height);
+
+  const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + plotH);
+  grad.addColorStop(0, 'rgba(74,111,165,0.23)');
+  grad.addColorStop(1, 'rgba(212,224,238,0.35)');
+  const bandTop = yOf(cfg.band[1]);
+  const bandBottom = yOf(cfg.band[0]);
+  ctx.fillStyle = grad;
+  ctx.fillRect(pad.left, bandTop, plotW, bandBottom - bandTop);
+
+  ctx.strokeStyle = '#E7EBF1';
+  ctx.lineWidth = 1 * ratio;
+  [0.2, 0.5, 0.8].forEach(frac => {
+    const y = pad.top + plotH * frac;
+    ctx.beginPath();
+    ctx.moveTo(pad.left, y);
+    ctx.lineTo(pad.left + plotW, y);
+    ctx.stroke();
+  });
+
+  ctx.fillStyle = '#8892A3';
+  ctx.font = `${12 * ratio}px Segoe UI, sans-serif`;
+  ctx.textAlign = 'right';
+  ctx.fillText(cfg.topLabel, pad.left - 12 * ratio, pad.top + 10 * ratio);
+  ctx.fillText(cfg.bottomLabel, pad.left - 12 * ratio, pad.top + plotH);
+
+  ctx.fillStyle = '#4A6FA5';
+  ctx.font = `600 ${12 * ratio}px Segoe UI, sans-serif`;
+  ctx.textAlign = 'left';
+  ctx.fillText('Usual comparison range', pad.left + 10 * ratio, bandTop - 8 * ratio);
+
+  ctx.strokeStyle = '#CAD4E2';
+  ctx.lineWidth = 1.5 * ratio;
+  ctx.beginPath();
+  ctx.moveTo(pad.left, pad.top + plotH);
+  ctx.lineTo(pad.left + plotW, pad.top + plotH);
+  ctx.stroke();
+
+  const area = ctx.createLinearGradient(0, pad.top, 0, pad.top + plotH);
+  area.addColorStop(0, 'rgba(74,111,165,0.20)');
+  area.addColorStop(1, 'rgba(74,111,165,0.02)');
+  ctx.beginPath();
+  values.forEach((value, index) => {
+    const x = xOf(index);
+    const y = yOf(value);
+    if (index === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.lineTo(xOf(values.length - 1), pad.top + plotH);
+  ctx.lineTo(xOf(0), pad.top + plotH);
+  ctx.closePath();
+  ctx.fillStyle = area;
+  ctx.fill();
+
+  const line = ctx.createLinearGradient(pad.left, 0, pad.left + plotW, 0);
+  line.addColorStop(0, '#4A6FA5');
+  line.addColorStop(1, '#8CAED5');
+  ctx.strokeStyle = line;
+  ctx.lineWidth = 4 * ratio;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  values.forEach((value, index) => {
+    const x = xOf(index);
+    const y = yOf(value);
+    if (index === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  values.forEach((value, index) => {
+    const latest = index === values.length - 1;
+    const x = xOf(index);
+    const y = yOf(value);
+    ctx.beginPath();
+    ctx.arc(x, y, latest ? 7 * ratio : 4.5 * ratio, 0, Math.PI * 2);
+    ctx.fillStyle = latest ? '#2F5F9E' : '#6F92BF';
+    ctx.fill();
+    ctx.lineWidth = latest ? 3 * ratio : 0;
+    ctx.strokeStyle = '#fff';
+    if (latest) ctx.stroke();
+  });
+
+  const latestX = xOf(values.length - 1);
+  const latestY = yOf(values[values.length - 1]);
+  ctx.fillStyle = '#1A2340';
+  ctx.font = `700 ${12 * ratio}px Segoe UI, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText('Latest', latestX, Math.max(pad.top + 12 * ratio, latestY - 16 * ratio));
+
+  const labelIndexes = [0, Math.floor((values.length - 1) / 2), values.length - 1];
+  ctx.fillStyle = '#8D95A6';
+  ctx.font = `${12 * ratio}px Segoe UI, sans-serif`;
+  labelIndexes.forEach(index => {
+    const session = PATIENT.sessions[index];
+    if (!session) return;
+    ctx.fillText(session.date, xOf(index), pad.top + plotH + 28 * ratio);
+  });
+
+  document.getElementById('chartHeading').textContent = cfg.heading;
+  document.getElementById('chartDescription').textContent = cfg.description;
+}
+
+function setMode(mode) {
+  GRAPH.mode = mode;
+  document.querySelectorAll('.toggle-btn').forEach(button => {
+    button.classList.toggle('active', button.dataset.mode === mode);
+  });
+  drawChart();
+}
+
+function renderPage() {
+  const latest = ML.latestSession(PATIENT);
+  const education = ML.educationFor(PATIENT.educationCode);
+  const score = latestScore(PATIENT);
+  const percentile = simplePercentile(PATIENT);
+
+  document.getElementById('pageTitle').textContent = firstName(PATIENT) + "'s memory check-in summary";
+  document.getElementById('pageSubtitle').textContent = 'Latest session: ' + latest.fullDate + ' - compared with people of a similar age and education level.';
+  document.getElementById('takeawayText').innerHTML = trendTakeaway(PATIENT).replace('not a cause for alarm', '<span class="soft">not a cause for alarm</span>');
+  document.getElementById('latestScore').textContent = score;
+  document.getElementById('scoreSub').textContent = comparisonPhrase(percentile) + ' - ' + education.label.toLowerCase();
+  document.getElementById('sessionNote').innerHTML = sessionNoteHtml(PATIENT);
+  document.getElementById('backBtn').onclick = () => {
+    window.location.href = 'patient_profile.html?patient=' + encodeURIComponent(PATIENT.id);
+  };
+}
+
+function setupGraph() {
+  GRAPH.canvas = document.getElementById('patientChart');
+  GRAPH.ctx = GRAPH.canvas.getContext('2d');
+  document.querySelectorAll('.toggle-btn').forEach(button => {
+    button.addEventListener('click', () => setMode(button.dataset.mode));
+  });
+  window.addEventListener('resize', drawChart);
+  drawChart();
+}
+
+window.addEventListener('load', () => {
+  renderPage();
+  setupGraph();
+});
+</script>
 </body>
 </html>
