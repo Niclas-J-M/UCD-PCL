@@ -449,7 +449,10 @@
     display: flex;
     gap: 11px;
     align-items: flex-start;
+    cursor: pointer;
+    transition: background 0.15s;
   }
+  .reminder-item:hover { background: #FAFAFB; }
   .reminder-item:last-child { border-bottom: none; }
   .rem-dot {
     width: 7px; height: 7px;
@@ -464,11 +467,32 @@
     color: var(--text);
     line-height: 1.45;
   }
-  .rem-text b { color: var(--navy); }
+  .rem-text b {
+    color: var(--navy);
+    text-decoration: underline;
+    text-decoration-color: #B7C4D8;
+    text-underline-offset: 2px;
+  }
   .rem-time {
     font-size: 11px;
     color: var(--text-faint);
     margin-top: 2px;
+  }
+  .rem-chevron {
+    margin-left: auto;
+    color: var(--text-faint);
+    font-size: 17px;
+    line-height: 1;
+    transition: transform 0.15s, color 0.15s;
+  }
+  .reminder-item:hover .rem-chevron {
+    color: var(--navy);
+    transform: translateX(2px);
+  }
+  .attention-hint {
+    font-size: 11.5px;
+    color: var(--text-faint);
+    font-weight: 500;
   }
 
   /* legend footnote */
@@ -794,14 +818,16 @@
       <div class="side-panel">
         <div class="panel-head">
           <h2>Needs your attention</h2>
+          <span class="attention-hint">Click a patient to review</span>
         </div>
-        <div>
+        <div class="attention-list">
           <div class="reminder-item">
             <div class="rem-dot"></div>
             <div>
               <div class="rem-text"><b>Anna Bakker</b> shows a declining trend over the last 3 sessions.</div>
               <div class="rem-time">Flagged 12 May</div>
             </div>
+            <div class="rem-chevron">&rsaquo;</div>
           </div>
           <div class="reminder-item">
             <div class="rem-dot soft"></div>
@@ -809,6 +835,7 @@
               <div class="rem-text"><b>Pieter Mulder</b> last session was interrupted — review session quality before interpreting.</div>
               <div class="rem-time">Flagged 30 Apr</div>
             </div>
+            <div class="rem-chevron">&rsaquo;</div>
           </div>
           <div class="reminder-item">
             <div class="rem-dot soft"></div>
@@ -816,10 +843,8 @@
               <div class="rem-text"><b>Greet Janssen</b> has not completed her scheduled session.</div>
               <div class="rem-time">Due since 28 Apr</div>
             </div>
+            <div class="rem-chevron">&rsaquo;</div>
           </div>
-        </div>
-        <div class="panel-foot">
-          <button class="btn-ghost">Send reminders</button>
         </div>
       </div>
 
@@ -951,6 +976,8 @@ function renderUpcomingSessions() {
 function renderReminders() {
   const reminderHost = document.querySelectorAll('.side-panel')[1];
   if (!reminderHost) return;
+  const list = reminderHost.querySelector('.attention-list');
+  if (!list) return;
 
   const bodyItems = ML.reminders().map(item => {
     const patient = ML.getPatient(item.patientId);
@@ -961,13 +988,13 @@ function renderReminders() {
           <div class="rem-text"><b>${patient.name}</b> ${item.text.replace(patient.name + ' ', '')}</div>
           <div class="rem-time">${item.time}</div>
         </div>
+        <div class="rem-chevron">&rsaquo;</div>
       </div>`;
   }).join('');
 
   const footer = reminderHost.querySelector('.panel-foot');
-  Array.from(reminderHost.querySelectorAll('.reminder-item')).forEach(item => item.remove());
-  reminderHost.querySelector('.panel-head').insertAdjacentHTML('afterend', bodyItems);
-  if (footer) reminderHost.appendChild(footer);
+  if (footer) footer.remove();
+  list.innerHTML = bodyItems;
 }
 
 window.addEventListener('load', () => {

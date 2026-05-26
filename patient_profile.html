@@ -137,6 +137,32 @@
   .cq-answer{font-size:12.5px;color:var(--text);line-height:1.5;}
   .cq-answer.empty{color:var(--text-faint);font-style:italic;}
   .cq-prev{font-size:11px;color:var(--text-faint);margin-top:5px;}
+  .note-editor{padding:14px 20px;border-top:1px solid var(--border);background:#FAFAFB;}
+  .note-editor.hidden{display:none;}
+  .note-field{margin-bottom:10px;}
+  .note-label{display:block;font-size:11.5px;font-weight:700;color:var(--navy);margin-bottom:5px;}
+  .note-select,.note-textarea{width:100%;border:1px solid var(--border);border-radius:7px;background:#fff;color:var(--text);font:inherit;font-size:12.5px;}
+  .note-select{padding:8px 9px;}
+  .note-textarea{min-height:86px;resize:vertical;padding:9px;line-height:1.45;}
+  .note-actions{display:flex;gap:8px;margin-top:10px;}
+  .note-save,.note-cancel{border:1px solid var(--border);border-radius:7px;padding:8px 11px;font-size:12.5px;font-weight:700;cursor:pointer;transition:all .15s;}
+  .note-save{background:var(--navy);border-color:var(--navy);color:#fff;}
+  .note-save:hover{background:var(--navy-soft);}
+  .note-cancel{background:#fff;color:var(--navy);}
+  .note-cancel:hover{background:var(--bg);border-color:var(--text-faint);}
+  .note-message{font-size:12px;color:var(--text-soft);padding:0 20px;margin-top:9px;min-height:17px;}
+  .note-message:empty{display:none;}
+  .note-message.error{color:var(--red);}
+  .note-message.success{
+    display:block;
+    margin:10px 20px 0;
+    padding:9px 11px;
+    border-radius:8px;
+    background:var(--good-soft);
+    border:1px solid #CFE3DC;
+    color:var(--good);
+    font-weight:700;
+  }
   .pq-item{padding:13px 20px;border-bottom:1px solid #EEF0F3;display:flex;gap:11px;}
   .pq-item:last-child{border-bottom:none;}
   .pq-bubble{width:26px;height:26px;border-radius:8px;flex-shrink:0;background:var(--accent-soft);color:var(--red);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;}
@@ -416,7 +442,27 @@
             <div class="cq-prev">From last visit &middot; 14 Apr</div>
           </div>
         </div>
-        <div class="panel-foot"><button class="btn-ghost">Add note for this visit</button></div>
+        <div class="note-editor hidden" id="noteEditor">
+          <div class="note-field">
+            <label class="note-label" for="noteType">Note type</label>
+            <select class="note-select" id="noteType">
+              <option>Primary concern today</option>
+              <option>Medication questions</option>
+              <option>Goal for next session</option>
+              <option>General note</option>
+            </select>
+          </div>
+          <div class="note-field">
+            <label class="note-label" for="noteText">Note</label>
+            <textarea class="note-textarea" id="noteText" placeholder="Write a short note from this visit..."></textarea>
+          </div>
+          <div class="note-actions">
+            <button class="note-save" type="button" id="saveNoteBtn">Save note</button>
+            <button class="note-cancel" type="button" id="cancelNoteBtn">Cancel</button>
+          </div>
+        </div>
+        <div class="note-message" id="noteMessage"></div>
+        <div class="panel-foot"><button class="btn-ghost" id="toggleNoteEditorBtn">Add note for this visit</button></div>
       </div>
 
       <div class="panel">
@@ -474,6 +520,8 @@
 const ML = window.MemoryLabData;
 let SELECTED_PATIENT = ML.getPatientFromUrl();
 let showAllSessions = false;
+let noteEditorOpen = false;
+let noteFeedbackTimer = null;
 /* ══════════════════════════════════════════════════════════
    SGMA NORM CALCULATION ENGINE
    THis is based on what is provided in SGMA_Norm_Calculation_Reference.md
@@ -613,6 +661,8 @@ function renderQualityHistory() {
 
 function renderProfileShell() {
   SELECTED_PATIENT = ML.getPatientFromUrl();
+  noteEditorOpen = false;
+  clearNoteFeedbackTimer();
   PATIENT = { age: SELECTED_PATIENT.age, observedSoF: ML.latestSession(SELECTED_PATIENT).sof };
   SESSIONS = SELECTED_PATIENT.sessions;
 
@@ -679,6 +729,7 @@ function renderProfileShell() {
   if (trendInterp) trendInterp.innerHTML = trendDescription(SELECTED_PATIENT);
 
   renderConsultationNotes();
+  setupConsultationNoteEditor();
   renderQuestions();
   renderRecentSessions();
 }
@@ -693,6 +744,76 @@ function renderConsultationNotes() {
       ${note.previous ? `<div class="cq-prev">${note.previous}</div>` : ''}
     </div>
   `).join('');
+}
+
+function setNoteMessage(text, tone = '') {
+  const message = document.getElementById('noteMessage');
+  if (!message) return;
+  message.textContent = text;
+  message.className = 'note-message' + (tone ? ' ' + tone : '');
+}
+
+function clearNoteFeedbackTimer() {
+  if (noteFeedbackTimer) {
+    clearTimeout(noteFeedbackTimer);
+    noteFeedbackTimer = null;
+  }
+}
+
+function setNoteEditorOpen(open) {
+  noteEditorOpen = open;
+  const editor = document.getElementById('noteEditor');
+  const toggle = document.getElementById('toggleNoteEditorBtn');
+  if (editor) editor.classList.toggle('hidden', !open);
+  if (toggle) toggle.textContent = open ? 'Close note editor' : 'Add note for this visit';
+  if (open) setNoteMessage('');
+  if (!open) {
+    const text = document.getElementById('noteText');
+    if (text) text.value = '';
+    setNoteMessage('');
+  }
+}
+
+function saveConsultationNote() {
+  const type = document.getElementById('noteType');
+  const text = document.getElementById('noteText');
+  if (!type || !text) return;
+
+  const answer = text.value.trim();
+  clearNoteFeedbackTimer();
+
+  if (!answer) {
+    setNoteMessage('Write a note before saving.', 'error');
+    text.focus();
+    return;
+  }
+
+  SELECTED_PATIENT.consultationNotes.unshift({
+    label: type.value,
+    answer,
+    previous: 'Added today',
+  });
+  renderConsultationNotes();
+  text.value = '';
+  setNoteEditorOpen(false);
+  setNoteMessage('Note saved successfully.', 'success');
+  noteFeedbackTimer = setTimeout(() => setNoteMessage(''), 2200);
+}
+
+function setupConsultationNoteEditor() {
+  const toggle = document.getElementById('toggleNoteEditorBtn');
+  const save = document.getElementById('saveNoteBtn');
+  const cancel = document.getElementById('cancelNoteBtn');
+  if (toggle) toggle.onclick = () => {
+    clearNoteFeedbackTimer();
+    setNoteEditorOpen(!noteEditorOpen);
+  };
+  if (save) save.onclick = saveConsultationNote;
+  if (cancel) cancel.onclick = () => {
+    clearNoteFeedbackTimer();
+    setNoteEditorOpen(false);
+  };
+  setNoteEditorOpen(noteEditorOpen);
 }
 
 function renderQuestions() {
