@@ -61,6 +61,8 @@
   .trend.new{background:#EEF0F6;color:var(--navy-soft);}
   .badges{display:flex;gap:6px;flex-wrap:wrap;}
   .badge{display:inline-flex;align-items:center;font-size:11.5px;font-weight:700;border-radius:999px;padding:4px 8px;background:#EEF0F6;color:var(--navy-soft);white-space:nowrap;}
+  .badge.filterable{cursor:pointer;border:1px solid transparent;transition:transform .12s,border-color .12s,box-shadow .12s;}
+  .badge.filterable:hover{transform:translateY(-1px);border-color:currentColor;box-shadow:0 2px 8px rgba(26,35,64,.08);}
   .badge.review,.badge.quality{background:var(--accent-soft);color:var(--red);}
   .badge.due{background:var(--watch-soft);color:var(--watch);}
   .badge.new{background:#EEF0F6;color:var(--navy-soft);}
@@ -163,13 +165,20 @@ function trendLabel(patient) {
 
 function patientBadges(patient) {
   const badges = [];
-  if (patient.flagged) badges.push({ cls: 'review', label: 'Needs review' });
-  if (patient.due) badges.push({ cls: 'due', label: 'Session due' });
-  patient.dashboardBadges.forEach(badge => badges.push({ cls: badge.type, label: badge.label }));
-  if (patient.trend === 'new') badges.push({ cls: 'new', label: 'New baseline' });
+  if (patient.flagged) badges.push({ cls: 'review', label: 'Needs review', filter: 'review' });
+  if (patient.due) badges.push({ cls: 'due', label: 'Session due', filter: 'due' });
+  patient.dashboardBadges.forEach(badge => {
+    const filter = badge.type === 'quality' ? 'review' : (badge.type === 'due' ? 'due' : '');
+    badges.push({ cls: badge.type, label: badge.label, filter });
+  });
+  if (patient.trend === 'new') badges.push({ cls: 'new', label: 'New baseline', filter: 'new' });
   const uniqueBadges = badges.filter((badge, index, all) => all.findIndex(item => item.label === badge.label) === index);
   if (!uniqueBadges.length) uniqueBadges.push({ cls: '', label: 'No active flags' });
-  return uniqueBadges.map(badge => `<span class="badge ${badge.cls}">${badge.label}</span>`).join('');
+  return uniqueBadges.map(badge => {
+    const filterAttr = badge.filter ? ` data-filter="${badge.filter}" role="button" tabindex="0" title="Filter by ${badge.label}"` : '';
+    const filterClass = badge.filter ? ' filterable' : '';
+    return `<span class="badge ${badge.cls}${filterClass}"${filterAttr}>${badge.label}</span>`;
+  }).join('');
 }
 
 function searchableLabels(patient) {
@@ -230,7 +239,7 @@ function renderPatients() {
         </td>
         <td>
           <div class="score-main">${sgma}</div>
-          <div class="score-sub">SoF ${latest.sof.toFixed(2)} &middot; ${latest.date}</div>
+          <div class="score-sub">Latest: ${latest.date}</div>
         </td>
         <td>${trendLabel(patient)}</td>
         <td><div class="badges">${patientBadges(patient)}</div></td>
@@ -247,6 +256,14 @@ function renderPatients() {
   count.textContent = rows.length + ' of ' + ML.patients.length + ' patients shown';
 }
 
+function setActiveFilter(filter) {
+  activeFilter = filter || 'all';
+  document.querySelectorAll('.filter-chip').forEach(item => {
+    item.classList.toggle('active', item.dataset.filter === activeFilter);
+  });
+  renderPatients();
+}
+
 document.getElementById('patientSearch').addEventListener('input', event => {
   searchTerm = event.target.value.trim().toLowerCase();
   renderPatients();
@@ -255,9 +272,23 @@ document.getElementById('patientSearch').addEventListener('input', event => {
 document.getElementById('filterChips').addEventListener('click', event => {
   const chip = event.target.closest('.filter-chip');
   if (!chip) return;
-  activeFilter = chip.dataset.filter;
-  document.querySelectorAll('.filter-chip').forEach(item => item.classList.toggle('active', item === chip));
-  renderPatients();
+  setActiveFilter(chip.dataset.filter);
+});
+
+document.getElementById('patientsTable').addEventListener('click', event => {
+  const badge = event.target.closest('.badge.filterable');
+  if (!badge) return;
+  event.preventDefault();
+  event.stopPropagation();
+  setActiveFilter(badge.dataset.filter);
+}, true);
+
+document.getElementById('patientsTable').addEventListener('keydown', event => {
+  const badge = event.target.closest('.badge.filterable');
+  if (!badge || (event.key !== 'Enter' && event.key !== ' ')) return;
+  event.preventDefault();
+  event.stopPropagation();
+  setActiveFilter(badge.dataset.filter);
 });
 
 renderPatients();
