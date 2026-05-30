@@ -106,15 +106,12 @@
   .mk {
     width: 18px;
     height: 18px;
-    background: var(--red);
-    border-radius: 5px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 10px;
-    font-weight: 800;
-    color: #fff;
+    flex-shrink: 0;
   }
+  .mk img { display: block; width: 100%; height: 100%; object-fit: contain; }
   .sheet-head h1 {
     font-size: 30px;
     font-weight: 700;
@@ -402,7 +399,7 @@
   <section class="sheet" aria-label="Patient memory check-in summary">
     <header class="sheet-head">
       <div class="logo-mini">
-        <div class="mk">M</div> MemoryLab
+        <div class="mk"><img src="image/logo_memorylab_mark.png" alt="" aria-hidden="true"></div> MemoryLab
       </div>
       <h1 id="pageTitle">Memory check-in summary</h1>
       <div class="subtitle" id="pageSubtitle">A simple overview to discuss together with your clinician.</div>
