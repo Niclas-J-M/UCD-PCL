@@ -64,7 +64,7 @@
   .badge.filterable{cursor:pointer;border:1px solid transparent;transition:transform .12s,border-color .12s,box-shadow .12s;}
   .badge.filterable:hover{transform:translateY(-1px);border-color:currentColor;box-shadow:0 2px 8px rgba(26,35,64,.08);}
   .badge.review,.badge.quality{background:var(--accent-soft);color:var(--red);}
-  .badge.due{background:var(--watch-soft);color:var(--watch);}
+  .badge.due,.badge.new-session{background:var(--watch-soft);color:var(--watch);}
   .badge.new{background:#EEF0F6;color:var(--navy-soft);}
   .actions{display:flex;gap:7px;justify-content:flex-end;}
   .btn-sm{border:1px solid var(--border);background:#fff;color:var(--text-soft);border-radius:7px;padding:7px 10px;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;}
@@ -120,7 +120,7 @@
       <div class="filters" id="filterChips">
         <div class="filter-chip active" data-filter="all">All</div>
         <div class="filter-chip" data-filter="review">Needs review</div>
-        <div class="filter-chip" data-filter="due">Session due</div>
+        <div class="filter-chip" data-filter="new-session">New session</div>
         <div class="filter-chip" data-filter="stable">Stable</div>
         <div class="filter-chip" data-filter="new">New</div>
       </div>
@@ -143,7 +143,12 @@
   </div>
 </div>
 
-<script src="mock-data.js"></script>
+<script src="data/schema.js"></script>
+<script src="data/patients.js"></script>
+<script src="data/sessions.js"></script>
+<script src="data/events.js"></script>
+<script src="data/notes.js"></script>
+<script src="data/index.js"></script>
 <script>
 const ML = window.MemoryLabData;
 let activeFilter = 'all';
@@ -158,21 +163,14 @@ function scheduleUrl(patient) {
 }
 
 function trendLabel(patient) {
-  if (patient.trend === 'declining') return '<span class="trend declining"><span>&#8600;</span>Declining</span>';
-  if (patient.trend === 'new') return '<span class="trend new"><span>&#8226;</span>New</span>';
+  const trend = ML.patientClinicalSummary(patient.id).trend;
+  if (trend === 'declining') return '<span class="trend declining"><span>&#8600;</span>Declining</span>';
+  if (trend === 'new') return '<span class="trend new"><span>&#8226;</span>New</span>';
   return '<span class="trend stable"><span>&#8594;</span>Stable</span>';
 }
 
 function patientBadges(patient) {
-  const badges = [];
-  if (patient.flagged) badges.push({ cls: 'review', label: 'Needs review', filter: 'review' });
-  if (patient.due) badges.push({ cls: 'due', label: 'Session due', filter: 'due' });
-  patient.dashboardBadges.forEach(badge => {
-    const filter = badge.type === 'quality' ? 'review' : (badge.type === 'due' ? 'due' : '');
-    badges.push({ cls: badge.type, label: badge.label, filter });
-  });
-  if (patient.trend === 'new') badges.push({ cls: 'new', label: 'New baseline', filter: 'new' });
-  const uniqueBadges = badges.filter((badge, index, all) => all.findIndex(item => item.label === badge.label) === index);
+  const uniqueBadges = ML.patientClinicalSummary(patient.id).badges.map(badge => ({ cls: badge.type, label: badge.label, filter: badge.filter }));
   if (!uniqueBadges.length) uniqueBadges.push({ cls: '', label: 'No active flags' });
   return uniqueBadges.map(badge => {
     const filterAttr = badge.filter ? ` data-filter="${badge.filter}" role="button" tabindex="0" title="Filter by ${badge.label}"` : '';
@@ -182,21 +180,20 @@ function patientBadges(patient) {
 }
 
 function searchableLabels(patient) {
-  const labels = [];
-  if (patient.flagged) labels.push('needs review');
-  if (patient.due) labels.push('session due');
-  if (patient.trend === 'declining') labels.push('declining needs review');
-  if (patient.trend === 'stable') labels.push('stable');
-  if (patient.trend === 'new') labels.push('new baseline');
-  patient.dashboardBadges.forEach(badge => labels.push(badge.label));
+  const summary = ML.patientClinicalSummary(patient.id);
+  const labels = [summary.trend];
+  if (summary.needsReview) labels.push('needs review');
+  if (summary.newSession) labels.push('new session session completed completed at home');
+  summary.badges.forEach(badge => labels.push(badge.label));
   return labels.join(' ');
 }
 
 function matchesFilter(patient) {
-  if (activeFilter === 'review') return patient.flagged;
-  if (activeFilter === 'due') return patient.due;
-  if (activeFilter === 'stable') return patient.trend === 'stable';
-  if (activeFilter === 'new') return patient.trend === 'new';
+  const summary = ML.patientClinicalSummary(patient.id);
+  if (activeFilter === 'review') return summary.needsReview;
+  if (activeFilter === 'new-session') return summary.newSession;
+  if (activeFilter === 'stable') return summary.trend === 'stable';
+  if (activeFilter === 'new') return summary.trend === 'new';
   return true;
 }
 
@@ -209,7 +206,7 @@ function matchesSearch(patient) {
     edu.label,
     edu.fullLabel,
     patient.status,
-    patient.trend,
+    ML.patientClinicalSummary(patient.id).trend,
     searchableLabels(patient),
   ].join(' ').toLowerCase();
   return haystack.includes(searchTerm);

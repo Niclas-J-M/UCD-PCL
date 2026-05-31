@@ -233,12 +233,18 @@
   </div>
 </div>
 
-<script src="mock-data.js"></script>
+<script src="data/schema.js"></script>
+<script src="data/patients.js"></script>
+<script src="data/sessions.js"></script>
+<script src="data/events.js"></script>
+<script src="data/notes.js"></script>
+<script src="data/index.js"></script>
 <script>
 const ML = window.MemoryLabData;
 let SELECTED_PATIENT = ML.getPatientFromUrl();
+let SESSIONS = ML.sessionsForPatient(SELECTED_PATIENT.id);
 let SESSION_INDEX = getSessionIndex();
-let SESSION = SELECTED_PATIENT.sessions[SESSION_INDEX] || ML.latestSession(SELECTED_PATIENT);
+let SESSION = SESSIONS[SESSION_INDEX] || ML.latestSession(SELECTED_PATIENT);
 
 const EDU_OFFSETS = [0.000, -0.006, -0.021, -0.024, -0.036];
 const EDU_LABELS  = ['Elementary','Vocational (MBO/VMBO)','Pre-university (HAVO/VWO)','Higher vocational (HBO)','Academic'];
@@ -246,8 +252,8 @@ const B0=0.32, B_AGE=0.0015, SIGMA=0.036;
 
 function getSessionIndex() {
   const raw = parseInt(new URLSearchParams(window.location.search).get('session'), 10);
-  if (Number.isNaN(raw)) return SELECTED_PATIENT.sessions.length - 1;
-  return Math.max(0, Math.min(SELECTED_PATIENT.sessions.length - 1, raw));
+  if (Number.isNaN(raw)) return SESSIONS.length - 1;
+  return Math.max(0, Math.min(SESSIONS.length - 1, raw));
 }
 
 function normCDF(z) {
@@ -321,18 +327,18 @@ function renderShell() {
     <span class="ph-tag"><b>${SESSION.fullDate}</b></span>
     <span class="ph-tag">Education: <b>${edu.fullLabel}</b></span>
     <span class="ph-tag">Status: <b>${SESSION.quality === 'caution' ? 'Quality review' : 'Good quality'}</b></span>
-    <span class="ph-tag"><b>${SELECTED_PATIENT.sessions.length}</b> total sessions</span>
+    <span class="ph-tag"><b>${SESSIONS.length}</b> total sessions</span>
   `;
   document.getElementById('backBtn').onclick = () => { window.location.href = profileUrl(SELECTED_PATIENT); };
   const prevBtn = document.getElementById('prevSessionBtn');
   const nextBtn = document.getElementById('nextSessionBtn');
   prevBtn.disabled = SESSION_INDEX <= 0;
-  nextBtn.disabled = SESSION_INDEX >= SELECTED_PATIENT.sessions.length - 1;
+  nextBtn.disabled = SESSION_INDEX >= SESSIONS.length - 1;
   prevBtn.onclick = () => {
     if (SESSION_INDEX > 0) window.location.href = sessionUrl(SELECTED_PATIENT, SESSION_INDEX - 1);
   };
   nextBtn.onclick = () => {
-    if (SESSION_INDEX < SELECTED_PATIENT.sessions.length - 1) window.location.href = sessionUrl(SELECTED_PATIENT, SESSION_INDEX + 1);
+    if (SESSION_INDEX < SESSIONS.length - 1) window.location.href = sessionUrl(SELECTED_PATIENT, SESSION_INDEX + 1);
   };
   markPatientEducationOption();
   document.getElementById('eduSelect').value = SELECTED_PATIENT.educationCode;

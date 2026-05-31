@@ -366,10 +366,16 @@
   </div>
 </div>
 
-<script src="mock-data.js"></script>
+<script src="data/schema.js"></script>
+<script src="data/patients.js"></script>
+<script src="data/sessions.js"></script>
+<script src="data/events.js"></script>
+<script src="data/notes.js"></script>
+<script src="data/index.js"></script>
 <script>
 const ML = window.MemoryLabData;
 let SELECTED_PATIENT = ML.getPatientFromUrl();
+let SELECTED_SESSIONS = ML.sessionsForPatient(SELECTED_PATIENT.id);
 let showAllSessions = false;
 let recentSort = { key: 'date', dir: 'desc' };
 let noteEditorOpen = false;
@@ -433,7 +439,7 @@ function ordinal(n) {
 
 /* ── Patient data from shared mock-data.js ── */
 let PATIENT = { age: SELECTED_PATIENT.age, observedSoF: ML.latestSession(SELECTED_PATIENT).sof };
-let SESSIONS = SELECTED_PATIENT.sessions;
+let SESSIONS = SELECTED_SESSIONS;
 
 function setText(selector, text) {
   const el = document.querySelector(selector);
@@ -473,9 +479,10 @@ function qualityCopy(session) {
 }
 
 function trendDescription(patient) {
-  if (patient.trend === 'declining') return patient.name + "'s SGMA score " + patient.trendSummary + ' Consider follow-up if this pattern continues.';
-  if (patient.trend === 'new') return patient.name + "'s SGMA results are still establishing a baseline. More sessions are needed before interpreting a trend.";
-  return patient.name + "'s SGMA score " + patient.trendSummary;
+  const summary = ML.patientClinicalSummary(patient.id);
+  if (summary.trend === 'declining') return patient.name + "'s SGMA score " + summary.trendSummary + ' Consider follow-up if this pattern continues.';
+  if (summary.trend === 'new') return patient.name + "'s SGMA results are still establishing a baseline. More sessions are needed before interpreting a trend.";
+  return patient.name + "'s SGMA score " + summary.trendSummary;
 }
 
 function parseDurationToSeconds(duration) {
@@ -500,7 +507,7 @@ function average(values) {
 }
 
 function renderQualityHistory() {
-  const sessions = SELECTED_PATIENT.sessions || [];
+  const sessions = SELECTED_SESSIONS || [];
   if (!sessions.length) {
     setText('#avgTrialsVal', '-');
     setText('#interruptedSessionsVal', '-');
@@ -522,10 +529,11 @@ function renderQualityHistory() {
 
 function renderProfileShell() {
   SELECTED_PATIENT = ML.getPatientFromUrl();
+  SELECTED_SESSIONS = ML.sessionsForPatient(SELECTED_PATIENT.id);
   noteEditorOpen = false;
   clearNoteFeedbackTimer();
   PATIENT = { age: SELECTED_PATIENT.age, observedSoF: ML.latestSession(SELECTED_PATIENT).sof };
-  SESSIONS = SELECTED_PATIENT.sessions;
+  SESSIONS = SELECTED_SESSIONS;
 
   const latest = ML.latestSession(SELECTED_PATIENT);
   const edu = ML.educationFor(SELECTED_PATIENT.educationCode);
@@ -538,7 +546,7 @@ function renderProfileShell() {
     <span class="ph-tag"><b>${SELECTED_PATIENT.age}</b> years</span>
     <span class="ph-tag">Education: <b>${edu.fullLabel}</b></span>
     <span class="ph-tag">Status: <b>${SELECTED_PATIENT.status}</b></span>
-    <span class="ph-tag"><b>${SELECTED_PATIENT.sessions.length}</b> sessions completed</span>
+    <span class="ph-tag"><b>${SELECTED_SESSIONS.length}</b> sessions completed</span>
     <span class="ph-tag">Patient since <b>${SELECTED_PATIENT.patientSince}</b></span>
   `);
 
@@ -547,7 +555,7 @@ function renderProfileShell() {
   const patientButton = document.querySelector('.ph-actions .btn-primary');
   if (patientButton) patientButton.onclick = () => { window.location.href = patientViewUrl(SELECTED_PATIENT); };
 
-  setText('.col-main .panel:first-child .subtitle', SELECTED_PATIENT.sessions.length + ' sessions · ' + SELECTED_PATIENT.sessions[0].label.split(' ')[0] + '–' + latest.label.split(' ')[0] + ' 2026');
+  setText('.col-main .panel:first-child .subtitle', SELECTED_SESSIONS.length + ' sessions · ' + SELECTED_SESSIONS[0].label.split(' ')[0] + '–' + latest.label.split(' ')[0] + ' 2026');
   setHtml('.traj-legend', `
     <div class="item"><span class="ln good"></span>${SELECTED_PATIENT.name.split(' ')[0]}'s SGMA score over time</div>
     <div class="item"><span class="mk good"></span>Good quality</div>
@@ -567,7 +575,7 @@ function renderProfileShell() {
 function renderConsultationNotes() {
   const panel = document.querySelector('.col-side .panel:nth-child(1) > div:nth-child(2)');
   if (!panel) return;
-  panel.innerHTML = SELECTED_PATIENT.consultationNotes.map(note => `
+  panel.innerHTML = ML.consultationNotesForPatient(SELECTED_PATIENT.id).map(note => `
     <div class="consult-q">
       <div class="cq-label">${note.label}</div>
       <div class="cq-answer ${note.empty ? 'empty' : ''}">${note.answer}</div>
@@ -618,11 +626,7 @@ function saveConsultationNote() {
     return;
   }
 
-  SELECTED_PATIENT.consultationNotes.unshift({
-    label: type.value,
-    answer,
-    previous: 'Added today',
-  });
+  ML.addConsultationNote(SELECTED_PATIENT.id, { label: type.value, answer, previous: 'Added today' });
   renderConsultationNotes();
   text.value = '';
   setNoteEditorOpen(false);
@@ -651,7 +655,7 @@ function renderQuestions() {
   if (heading) heading.textContent = 'Questions from ' + SELECTED_PATIENT.name.split(' ')[0];
   const panel = document.querySelector('.col-side .panel:nth-child(2) > div:nth-child(2)');
   if (!panel) return;
-  panel.innerHTML = SELECTED_PATIENT.questions.map(question => `
+  panel.innerHTML = ML.questionsForPatient(SELECTED_PATIENT.id).map(question => `
     <div class="pq-item">
       <div class="pq-bubble">?</div>
       <div>
@@ -712,7 +716,7 @@ function setupRecentSessionSorting() {
 function renderRecentSessions() {
   const panel = document.querySelector('#recentSessionsPanel .hist-list');
   if (!panel) return;
-  const indexedSessions = SELECTED_PATIENT.sessions.map((session, index) => ({ session, index }));
+  const indexedSessions = SELECTED_SESSIONS.map((session, index) => ({ session, index }));
   const sortedSessions = sortRecentSessions(indexedSessions);
   const sessions = showAllSessions ? sortedSessions : sortedSessions.slice(0, 4);
   const subtitle = document.querySelector('#recentSessionsPanel .panel-head .subtitle');
@@ -742,7 +746,7 @@ function renderRecentSessions() {
   });
   const foot = document.querySelector('#recentSessionsPanel .panel-foot button');
   if (foot) {
-    foot.textContent = showAllSessions ? 'Show recent sessions' : 'View all ' + SELECTED_PATIENT.sessions.length + ' sessions';
+    foot.textContent = showAllSessions ? 'Show recent sessions' : 'View all ' + SELECTED_SESSIONS.length + ' sessions';
     foot.onclick = () => {
       showAllSessions = !showAllSessions;
       renderRecentSessions();

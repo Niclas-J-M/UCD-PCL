@@ -303,10 +303,8 @@
     letter-spacing: 0.2px;
     white-space: nowrap;
   }
-  .badge.due {
-    background: var(--accent-soft);
-    color: var(--red);
-  }
+  .badge.due { background: var(--accent-soft); color: var(--red); }
+  .badge.new-session { background: #FBF1E3; color: var(--watch); }
   .badge.quality {
     background: #FBF1E3;
     color: var(--watch);
@@ -583,7 +581,7 @@
         <div class="filters">
           <div class="filter-chip active" data-filter="all">All</div>
           <div class="filter-chip" data-filter="review">Needs review</div>
-          <div class="filter-chip" data-filter="due">Session due</div>
+          <div class="filter-chip" data-filter="new-session">New session</div>
         </div>
       </div>
 
@@ -649,7 +647,7 @@
               <div class="pc-sub">79 yrs · 21 sessions</div>
             </div>
             <div class="pc-badges">
-              <span class="badge due">Session due</span>
+              <span class="badge new-session">New session</span>
             </div>
           </div>
           <div class="pc-score">
@@ -676,7 +674,7 @@
               <div class="pc-sub">74 yrs · 16 sessions</div>
             </div>
             <div class="pc-badges">
-              <span class="badge due">Session due</span>
+              <span class="badge new-session">New session</span>
             </div>
           </div>
           <div class="pc-score">
@@ -768,10 +766,10 @@
     <!-- RIGHT: side column -->
     <div class="side-col">
 
-      <!-- Upcoming sessions -->
+      <!-- Upcoming schedule -->
       <div class="side-panel">
         <div class="panel-head">
-          <h2>Upcoming sessions</h2>
+          <h2>Upcoming schedule</h2>
         </div>
         <div class="schedule-list">
           <div class="schedule-item">
@@ -781,9 +779,9 @@
             </div>
             <div class="sched-info">
               <div class="pname">Greet Janssen</div>
-              <div class="ptype">Longitudinal · session 22</div>
+              <div class="ptype">At-home deadline due</div>
             </div>
-            <span class="sched-status confirmed">Confirmed</span>
+            <span class="sched-status confirmed">Due today</span>
           </div>
           <div class="schedule-item">
             <div class="sched-date">
@@ -792,9 +790,9 @@
             </div>
             <div class="sched-info">
               <div class="pname">Pieter Mulder</div>
-              <div class="ptype">Longitudinal · session 17</div>
+              <div class="ptype">At-home deadline due</div>
             </div>
-            <span class="sched-status pending">Reminder sent</span>
+            <span class="sched-status pending">Reminder</span>
           </div>
           <div class="schedule-item">
             <div class="sched-date">
@@ -803,7 +801,7 @@
             </div>
             <div class="sched-info">
               <div class="pname">Sophie Hendriks</div>
-              <div class="ptype">First assessment</div>
+              <div class="ptype">In-person appointment</div>
             </div>
             <span class="sched-status confirmed">Confirmed</span>
           </div>
@@ -817,7 +815,6 @@
       <div class="side-panel">
         <div class="panel-head">
           <h2>Needs your attention</h2>
-          <span class="attention-hint">Click a patient to review</span>
         </div>
         <div class="attention-list">
           <div class="reminder-item">
@@ -852,7 +849,12 @@
   </div>
 </div>
 
-<script src="mock-data.js"></script>
+<script src="data/schema.js"></script>
+<script src="data/patients.js"></script>
+<script src="data/sessions.js"></script>
+<script src="data/events.js"></script>
+<script src="data/notes.js"></script>
+<script src="data/index.js"></script>
 <script>
 const ML = window.MemoryLabData;
 const DASHBOARD_PATIENT_LIMIT = 6;
@@ -868,7 +870,7 @@ function renderDashboardSummary() {
   const stats = document.querySelectorAll('.summary .stat');
   if (stats[0]) stats[0].querySelector('.value').textContent = ML.patients.length;
   if (stats[1]) stats[1].querySelector('.value').textContent = ML.completedThisWeek();
-  if (stats[2]) stats[2].querySelector('.value').textContent = ML.patients.filter(patient => patient.flagged).length;
+  if (stats[2]) stats[2].querySelector('.value').textContent = ML.patients.filter(patient => ML.patientClinicalSummary(patient.id).needsReview).length;
 }
 
 function renderPatientGrid() {
@@ -876,8 +878,9 @@ function renderPatientGrid() {
   if (!grid) return;
 
   const matchingPatients = ML.patients.filter(patient => {
-    if (activePatientFilter === 'review') return patient.flagged;
-    if (activePatientFilter === 'due') return patient.due;
+    const summary = ML.patientClinicalSummary(patient.id);
+    if (activePatientFilter === 'review') return summary.needsReview;
+    if (activePatientFilter === 'new-session') return summary.newSession;
     return true;
   });
   const visiblePatients = matchingPatients.slice(0, DASHBOARD_PATIENT_LIMIT);
@@ -894,17 +897,19 @@ function renderPatientGrid() {
 
   grid.innerHTML = visiblePatients.map(patient => {
     const latest = ML.latestSession(patient);
+    const sessions = ML.sessionsForPatient(patient.id);
+    const summary = ML.patientClinicalSummary(patient.id);
     const sgma = Math.round(ML.sofToSGMA(latest.sof));
     const marker = ML.dashboardMarkerPercent(patient);
-    const elevated = patient.flagged || marker < 25 ? ' elevated' : '';
-    const badges = patient.dashboardBadges.map(badge => `<span class="badge ${badge.type}">${badge.label}</span>`).join('');
+    const elevated = summary.needsReview || marker < 25 ? ' elevated' : '';
+    const badges = summary.badges.map(badge => `<span class="badge ${badge.type}">${badge.label}</span>`).join('');
 
     return `
       <a class="patient-card" href="patient_profile.html?patient=${patient.id}">
         <div class="pc-top">
           <div>
             <div class="pc-name">${patient.name}</div>
-            <div class="pc-sub">${patient.age} yrs &middot; ${patient.sessions.length} sessions</div>
+            <div class="pc-sub">${patient.age} yrs &middot; ${sessions.length} sessions</div>
           </div>
           <div class="pc-badges">${badges}</div>
         </div>
@@ -920,7 +925,7 @@ function renderPatientGrid() {
         </div>
         <div class="pc-foot">
           <span class="pc-last">Last session: ${latest.date}</span>
-          ${trendHtml(patient.trend)}
+          ${trendHtml(summary.trend)}
         </div>
       </a>`;
   }).join('');
@@ -932,8 +937,8 @@ function updatePatientGridCount(visibleCount, totalCount) {
   if (!count) return;
   if (activePatientFilter === 'review') {
     count.textContent = `Showing ${visibleCount} of ${totalCount} patients needing review`;
-  } else if (activePatientFilter === 'due') {
-    count.textContent = `Showing ${visibleCount} of ${totalCount} patients with sessions due`;
+  } else if (activePatientFilter === 'new-session') {
+    count.textContent = `Showing ${visibleCount} of ${totalCount} patients with new sessions`;
   } else {
     count.textContent = `Showing ${visibleCount} of ${totalCount} patients`;
   }
@@ -952,20 +957,29 @@ function renderUpcomingSessions() {
   const list = document.querySelector('.schedule-list');
   if (!list) return;
 
-  list.innerHTML = ML.upcomingSessions(3).map(event => {
-    const patient = ML.getPatient(event.pid);
-    const statusClass = event.status === 'confirmed' ? 'confirmed' : 'pending';
-    const statusLabel = event.note || (event.status === 'confirmed' ? 'Confirmed' : event.status);
+  list.innerHTML = ML.upcomingEvents(3).map(event => {
+    const patientId = event.patientId || event.pid;
+    const patient = patientId ? ML.getPatient(patientId) : null;
+    const isDeadline = event.type === 'home_deadline' || event.type === 'session';
+    const statusClass = event.status === 'scheduled' || event.status === 'due' ? 'confirmed' : 'pending';
+    const statusLabel = isDeadline
+      ? (event.status === 'due' ? 'Due today' : 'At-home deadline')
+      : (event.purpose || 'In-person appointment');
+    const title = patient ? patient.name : (event.title || 'Clinic appointment');
+    const detail = isDeadline
+      ? 'At-home deadline due'
+      : 'In-person appointment' + (patient ? ' · ' + patient.name : '');
+    const href = patient ? `schedule.html?patient=${patient.id}` : 'schedule.html';
 
     return `
-      <div class="schedule-item" onclick="window.location.href='schedule.html?patient=${patient.id}'">
+      <div class="schedule-item" onclick="window.location.href='${href}'">
         <div class="sched-date">
           <div class="day">${event.date.getDate()}</div>
           <div class="mon">${event.date.toLocaleDateString('en-GB', { month: 'short' })}</div>
         </div>
         <div class="sched-info">
-          <div class="pname">${patient.name}</div>
-          <div class="ptype">Longitudinal &middot; session ${patient.sessions.length + 1}</div>
+          <div class="pname">${title}</div>
+          <div class="ptype">${detail}</div>
         </div>
         <span class="sched-status ${statusClass}">${statusLabel}</span>
       </div>`;
@@ -978,7 +992,7 @@ function renderReminders() {
   const list = reminderHost.querySelector('.attention-list');
   if (!list) return;
 
-  const bodyItems = ML.reminders().map(item => {
+  const bodyItems = ML.dashboardReminders(3).map(item => {
     const patient = ML.getPatient(item.patientId);
     return `
       <div class="reminder-item" onclick="window.location.href='patient_profile.html?patient=${patient.id}'">

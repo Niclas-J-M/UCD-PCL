@@ -92,7 +92,7 @@ window.MemoryLabData = (() => {
       status: 'Monitoring - missed session',
       patientSince: 'Nov 2025',
       trend: 'stable',
-      dashboardBadges: [{ type: 'due', label: 'Session due' }],
+      dashboardBadges: [{ type: 'due', label: 'Deadline due' }],
       flagged: false,
       due: true,
       colour: '#2E8B72',
@@ -123,7 +123,7 @@ window.MemoryLabData = (() => {
       status: 'Monitoring - quality review',
       patientSince: 'Dec 2025',
       trend: 'declining',
-      dashboardBadges: [{ type: 'due', label: 'Session due' }],
+      dashboardBadges: [{ type: 'due', label: 'Deadline due' }],
       flagged: true,
       due: true,
       colour: '#C17D2A',
@@ -288,30 +288,32 @@ window.MemoryLabData = (() => {
   ];
 
   const calendarEvents = [
-    { id: 1, type: 'session', pid: 'anna-bakker', date: new Date(2026, 4, 5), time: '10:00', status: 'completed', note: '' },
-    { id: 2, type: 'session', pid: 'johan-de-vries', date: new Date(2026, 4, 5), time: '11:30', status: 'completed', note: '' },
-    { id: 3, type: 'session', pid: 'greet-janssen', date: new Date(2026, 4, 6), time: '14:00', status: 'completed', note: '' },
-    { id: 4, type: 'session', pid: 'pieter-mulder', date: new Date(2026, 4, 6), time: '09:00', status: 'completed', note: '' },
-    { id: 5, type: 'session', pid: 'marieke-smit', date: new Date(2026, 4, 11), time: '10:00', status: 'completed', note: '' },
-    { id: 6, type: 'session', pid: 'henk-visser', date: new Date(2026, 4, 12), time: '11:00', status: 'completed', note: '' },
-    { id: 7, type: 'session', pid: 'anna-bakker', date: new Date(2026, 4, 12), time: '10:00', status: 'completed', note: 'Session had interruption' },
-    { id: 8, type: 'session', pid: 'johan-de-vries', date: new Date(2026, 4, 13), time: '11:30', status: 'completed', note: '' },
-    { id: 9, type: 'session', pid: 'greet-janssen', date: new Date(2026, 4, 13), time: '14:00', status: 'overdue', note: 'Missed - no response to reminder' },
-    { id: 10, type: 'session', pid: 'pieter-mulder', date: new Date(2026, 4, 14), time: '09:00', status: 'overdue', note: '' },
-    { id: 11, type: 'session', pid: 'henk-visser', date: new Date(2026, 4, 18), time: '10:00', status: 'confirmed', note: '' },
-    { id: 12, type: 'session', pid: 'marieke-smit', date: new Date(2026, 4, 19), time: '14:30', status: 'confirmed', note: '' },
-    { id: 13, type: 'session', pid: 'anna-bakker', date: new Date(2026, 4, 19), time: '11:00', status: 'confirmed', note: '' },
-    { id: 14, type: 'session', pid: 'johan-de-vries', date: new Date(2026, 4, 21), time: '10:00', status: 'confirmed', note: '' },
-    { id: 15, type: 'session', pid: 'greet-janssen', date: new Date(2026, 4, 20), time: '14:00', status: 'confirmed', note: 'Reminder sent' },
-    { id: 16, type: 'session', pid: 'pieter-mulder', date: new Date(2026, 4, 21), time: '09:00', status: 'confirmed', note: '' },
-    { id: 17, type: 'session', pid: 'henk-visser', date: new Date(2026, 4, 25), time: '10:00', status: 'confirmed', note: '' },
-    { id: 18, type: 'session', pid: 'marieke-smit', date: new Date(2026, 4, 26), time: '14:30', status: 'confirmed', note: '' },
-    { id: 19, type: 'session', pid: 'anna-bakker', date: new Date(2026, 4, 26), time: '11:00', status: 'confirmed', note: '' },
-    { id: 20, type: 'session', pid: 'johan-de-vries', date: new Date(2026, 4, 28), time: '10:00', status: 'confirmed', note: '' },
-    { id: 21, type: 'clinic', pid: null, date: new Date(2026, 4, 18), time: '08:30', title: 'GP staff meeting', status: 'confirmed', note: 'Monthly dept update' },
-    { id: 22, type: 'clinic', pid: null, date: new Date(2026, 4, 20), time: '12:00', title: 'Lunch with Dr. Smit', status: 'confirmed', note: '' },
-    { id: 23, type: 'clinic', pid: null, date: new Date(2026, 4, 22), time: '09:00', title: 'Admin block', status: 'confirmed', note: 'Reports and referrals' },
-    { id: 24, type: 'clinic', pid: null, date: new Date(2026, 4, 27), time: '14:00', title: 'PCL update call', status: 'confirmed', note: 'Precision Cognition Labs monthly check-in' },
+    { id: 1, type: 'home_deadline', patientId: 'anna-bakker', title: 'At-home SGMA session', date: new Date(2026, 4, 5), time: '10:00', status: 'completed', note: '' },
+    { id: 2, type: 'home_deadline', patientId: 'johan-de-vries', title: 'At-home SGMA session', date: new Date(2026, 4, 5), time: '11:30', status: 'completed', note: '' },
+    { id: 3, type: 'home_deadline', patientId: 'greet-janssen', title: 'At-home SGMA session', date: new Date(2026, 4, 6), time: '14:00', status: 'completed', note: '' },
+    { id: 4, type: 'home_deadline', patientId: 'pieter-mulder', title: 'At-home SGMA session', date: new Date(2026, 4, 6), time: '09:00', status: 'completed', note: '' },
+    { id: 5, type: 'home_deadline', patientId: 'marieke-smit', title: 'At-home SGMA session', date: new Date(2026, 4, 11), time: '10:00', status: 'completed', note: '' },
+    { id: 6, type: 'home_deadline', patientId: 'henk-visser', title: 'At-home SGMA session', date: new Date(2026, 4, 12), time: '11:00', status: 'completed', note: '' },
+    { id: 7, type: 'home_deadline', patientId: 'anna-bakker', title: 'At-home SGMA session', date: new Date(2026, 4, 12), time: '10:00', status: 'completed', note: 'Session had interruption' },
+    { id: 8, type: 'home_deadline', patientId: 'johan-de-vries', title: 'At-home SGMA session', date: new Date(2026, 4, 13), time: '11:30', status: 'completed', note: '' },
+    { id: 9, type: 'home_deadline', patientId: 'greet-janssen', title: 'At-home SGMA deadline', date: new Date(2026, 4, 13), time: '14:00', status: 'overdue', note: 'Missed - no response to reminder', reminderDaysBefore: 1 },
+    { id: 10, type: 'home_deadline', patientId: 'pieter-mulder', title: 'At-home SGMA deadline', date: new Date(2026, 4, 14), time: '09:00', status: 'overdue', note: '', reminderDaysBefore: 1 },
+    { id: 11, type: 'home_deadline', patientId: 'henk-visser', title: 'At-home SGMA deadline', date: new Date(2026, 4, 18), status: 'due', note: '', reminderDaysBefore: 1 },
+    { id: 12, type: 'home_deadline', patientId: 'marieke-smit', title: 'At-home SGMA deadline', date: new Date(2026, 4, 19), status: 'scheduled', note: '', reminderDaysBefore: 1 },
+    { id: 13, type: 'home_deadline', patientId: 'anna-bakker', title: 'At-home SGMA deadline', date: new Date(2026, 4, 19), status: 'scheduled', note: 'Due before results discussion', reminderDaysBefore: 2 },
+    { id: 14, type: 'home_deadline', patientId: 'johan-de-vries', title: 'At-home SGMA deadline', date: new Date(2026, 4, 21), status: 'scheduled', note: '', reminderDaysBefore: 1 },
+    { id: 15, type: 'home_deadline', patientId: 'greet-janssen', title: 'At-home SGMA deadline', date: new Date(2026, 4, 20), status: 'scheduled', note: 'Reminder sent', reminderDaysBefore: 1 },
+    { id: 16, type: 'home_deadline', patientId: 'pieter-mulder', title: 'At-home SGMA deadline', date: new Date(2026, 4, 21), status: 'scheduled', note: '', reminderDaysBefore: 1 },
+    { id: 17, type: 'home_deadline', patientId: 'henk-visser', title: 'At-home SGMA deadline', date: new Date(2026, 4, 25), status: 'scheduled', note: '', reminderDaysBefore: 1 },
+    { id: 18, type: 'home_deadline', patientId: 'marieke-smit', title: 'At-home SGMA deadline', date: new Date(2026, 4, 26), status: 'scheduled', note: '', reminderDaysBefore: 1 },
+    { id: 19, type: 'home_deadline', patientId: 'anna-bakker', title: 'At-home SGMA deadline', date: new Date(2026, 4, 26), time: '11:00', status: 'scheduled', note: 'Weekly home task', reminderDaysBefore: 2 },
+    { id: 20, type: 'home_deadline', patientId: 'johan-de-vries', title: 'At-home SGMA deadline', date: new Date(2026, 4, 28), status: 'scheduled', note: '', reminderDaysBefore: 1 },
+    { id: 21, type: 'clinic_appointment', patientId: null, date: new Date(2026, 4, 18), time: '08:30', endTime: '09:15', title: 'GP staff meeting', purpose: 'Consultation', status: 'scheduled', note: 'Monthly dept update' },
+    { id: 22, type: 'clinic_appointment', patientId: null, date: new Date(2026, 4, 20), time: '12:00', endTime: '12:45', title: 'Lunch with Dr. Smit', purpose: 'Consultation', status: 'scheduled', note: '' },
+    { id: 23, type: 'clinic_appointment', patientId: null, date: new Date(2026, 4, 22), time: '09:00', endTime: '10:00', title: 'Admin block', purpose: 'Consultation', status: 'scheduled', note: 'Reports and referrals' },
+    { id: 24, type: 'clinic_appointment', patientId: null, date: new Date(2026, 4, 27), time: '14:00', endTime: '14:45', title: 'PCL update call', purpose: 'Consultation', status: 'scheduled', note: 'Precision Cognition Labs monthly check-in' },
+    { id: 25, type: 'clinic_appointment', patientId: 'anna-bakker', date: new Date(2026, 4, 19), time: '11:00', endTime: '11:45', title: 'Anna Bakker - results discussion', purpose: 'Results discussion', status: 'scheduled', note: 'Discuss SGMA trend and latest caution session' },
+    { id: 26, type: 'clinic_appointment', patientId: 'anna-bakker', date: new Date(2026, 4, 26), time: '11:00', endTime: '11:30', title: 'Anna Bakker - assessment', purpose: 'Assessment', status: 'scheduled', note: 'Same-time overlap test with home deadline' },
   ];
 
   function cloneEvents() {
@@ -354,13 +356,30 @@ window.MemoryLabData = (() => {
 
   function upcomingSessions(count = 3) {
     return cloneEvents()
-      .filter(event => event.type === 'session' && event.date >= TODAY && event.status !== 'completed')
-      .sort((a, b) => a.date - b.date || a.time.localeCompare(b.time))
+      .filter(event => event.date >= TODAY && event.status !== 'completed')
+      .sort((a, b) => a.date - b.date || (eventTime(a)).localeCompare(eventTime(b)))
       .slice(0, count);
+  }
+
+  function eventTime(event) {
+    return event.time || '23:59';
   }
 
   function reminders() {
     const items = [];
+    cloneEvents()
+      .filter(event => event.type === 'home_deadline' && event.status !== 'completed' && event.reminderDaysBefore)
+      .sort((a, b) => a.date - b.date)
+      .slice(0, 1)
+      .forEach(event => {
+        const patient = getPatient(event.patientId);
+        items.push({
+          patientId: patient.id,
+          tone: event.status === 'overdue' ? 'alert' : 'soft',
+          text: `${patient.name} reminder: at-home deadline due ${event.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`,
+          time: `${event.reminderDaysBefore} day${event.reminderDaysBefore === 1 ? '' : 's'} before deadline`,
+        });
+      });
     patients.forEach(patient => {
       if (patient.reviewNote) items.push({ patientId: patient.id, tone: 'alert', text: `${patient.name} ${patient.reviewNote}`, time: `Flagged ${latestSession(patient).date}` });
       if (patient.reminderNote) items.push({ patientId: patient.id, tone: 'soft', text: `${patient.name} ${patient.reminderNote}`, time: `Due since ${latestSession(patient).date}` });
@@ -369,7 +388,7 @@ window.MemoryLabData = (() => {
   }
 
   function completedThisWeek() {
-    return cloneEvents().filter(event => event.type === 'session' && event.status === 'completed' && event.date.getMonth() === 4 && event.date.getDate() >= 11 && event.date.getDate() <= 17).length;
+    return cloneEvents().filter(event => event.type === 'home_deadline' && event.status === 'completed' && event.date.getMonth() === 4 && event.date.getDate() >= 11 && event.date.getDate() <= 17).length;
   }
 
   return {

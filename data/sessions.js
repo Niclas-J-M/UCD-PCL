@@ -1,0 +1,61 @@
+window.MemoryLabSessions = (() => {
+  const { sessionSeries } = window.MemoryLabSchema;
+  return [
+    ...sessionSeries('anna-bakker', [
+      { date: '2026-01-06', sof: 0.36, trials: 42, nonRetrievalTime: 2.8, duration: '8:04' },
+      { date: '2026-01-13', sof: 0.37, trials: 41, nonRetrievalTime: 3.0, duration: '8:10' },
+      { date: '2026-01-20', sof: 0.37, trials: 43, nonRetrievalTime: 3.1, duration: '7:58' },
+      { date: '2026-01-27', sof: 0.38, trials: 40, nonRetrievalTime: 3.2, duration: '8:15' },
+      { date: '2026-02-03', sof: 0.38, trials: 41, nonRetrievalTime: 3.1, duration: '8:01' },
+      { date: '2026-02-10', sof: 0.39, trials: 39, nonRetrievalTime: 3.4, duration: '8:20' },
+      { date: '2026-02-24', sof: 0.40, trials: 40, nonRetrievalTime: 3.3, duration: '8:07' },
+      { date: '2026-03-03', sof: 0.40, trials: 42, nonRetrievalTime: 3.5, duration: '8:16' },
+      { date: '2026-03-17', sof: 0.41, trials: 40, nonRetrievalTime: 3.6, duration: '8:22' },
+      { date: '2026-04-07', sof: 0.41, trials: 39, nonRetrievalTime: 3.4, duration: '8:11' },
+      { date: '2026-04-21', sof: 0.42, trials: 40, nonRetrievalTime: 3.7, duration: '8:18' },
+      { date: '2026-04-28', sof: 0.42, trials: 40, nonRetrievalTime: 3.8, duration: '8:13' },
+      { date: '2026-05-05', sof: 0.42, trials: 39, nonRetrievalTime: 3.9, duration: '8:08' },
+      { date: '2026-05-12', sof: 0.44, quality: 'caution', trials: 38, interruptions: 1, interruptionNote: '4 min gap detected', nonRetrievalTime: 4.2, duration: '8:12' },
+    ]),
+    ...sessionSeries('johan-de-vries', [
+      { date: '2026-03-03', sof: 0.37, trials: 42, nonRetrievalTime: 2.9, duration: '7:54' },
+      { date: '2026-03-10', sof: 0.37, trials: 41, nonRetrievalTime: 3.0, duration: '8:02' },
+      { date: '2026-03-17', sof: 0.36, trials: 43, nonRetrievalTime: 2.8, duration: '7:49' },
+      { date: '2026-03-24', sof: 0.37, trials: 40, nonRetrievalTime: 2.9, duration: '8:11' },
+      { date: '2026-04-07', sof: 0.37, trials: 41, nonRetrievalTime: 3.0, duration: '8:05' },
+      { date: '2026-04-21', sof: 0.38, trials: 42, nonRetrievalTime: 3.1, duration: '8:00' },
+      { date: '2026-04-28', sof: 0.37, trials: 41, nonRetrievalTime: 3.0, duration: '7:58' },
+      { date: '2026-05-05', sof: 0.37, trials: 42, nonRetrievalTime: 3.1, duration: '8:09' },
+      { date: '2026-05-13', sof: 0.37, trials: 42, nonRetrievalTime: 3.0, duration: '8:03' },
+    ]),
+    ...sessionSeries('greet-janssen', [
+      { date: '2026-03-10', sof: 0.39, trials: 39, nonRetrievalTime: 3.1, duration: '8:25' },
+      { date: '2026-03-17', sof: 0.39, trials: 40, nonRetrievalTime: 3.0, duration: '8:18' },
+      { date: '2026-03-24', sof: 0.40, trials: 38, nonRetrievalTime: 3.2, duration: '8:31' },
+      { date: '2026-04-07', sof: 0.39, trials: 39, nonRetrievalTime: 3.3, duration: '8:20' },
+      { date: '2026-04-14', sof: 0.39, trials: 40, nonRetrievalTime: 3.2, duration: '8:12' },
+      { date: '2026-04-21', sof: 0.40, trials: 39, nonRetrievalTime: 3.3, duration: '8:27' },
+      { date: '2026-04-28', sof: 0.39, trials: 39, nonRetrievalTime: 3.2, duration: '8:16' },
+    ]),
+    ...sessionSeries('pieter-mulder', [
+      { date: '2026-02-17', sof: 0.39, trials: 41, nonRetrievalTime: 3.2, duration: '8:02' },
+      { date: '2026-03-03', sof: 0.40, trials: 40, nonRetrievalTime: 3.3, duration: '8:12' },
+      { date: '2026-03-17', sof: 0.41, trials: 39, nonRetrievalTime: 3.4, duration: '8:18' },
+      { date: '2026-04-07', sof: 0.42, trials: 38, nonRetrievalTime: 3.8, duration: '8:22' },
+      { date: '2026-04-21', sof: 0.42, trials: 38, nonRetrievalTime: 3.9, duration: '8:16' },
+      { date: '2026-04-30', sof: 0.43, quality: 'caution', trials: 34, interruptions: 1, interruptionNote: 'Session interrupted', nonRetrievalTime: 4.0, duration: '6:45' },
+    ]),
+    ...sessionSeries('marieke-smit', [
+      { date: '2026-05-04', sof: 0.36, trials: 43, nonRetrievalTime: 2.7, duration: '7:45' },
+      { date: '2026-05-11', sof: 0.36, trials: 44, nonRetrievalTime: 2.8, duration: '7:52' },
+    ]),
+    ...sessionSeries('henk-visser', [
+      { date: '2026-02-17', sof: 0.39, trials: 40, nonRetrievalTime: 3.3, duration: '8:05' },
+      { date: '2026-03-03', sof: 0.38, trials: 41, nonRetrievalTime: 3.1, duration: '7:56' },
+      { date: '2026-03-17', sof: 0.39, trials: 40, nonRetrievalTime: 3.2, duration: '8:14' },
+      { date: '2026-04-07', sof: 0.38, trials: 42, nonRetrievalTime: 3.1, duration: '8:00' },
+      { date: '2026-04-21', sof: 0.38, trials: 41, nonRetrievalTime: 3.2, duration: '8:07' },
+      { date: '2026-05-13', sof: 0.38, trials: 42, nonRetrievalTime: 3.1, duration: '8:02' },
+    ]),
+  ];
+})();

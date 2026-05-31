@@ -1,0 +1,31 @@
+window.MemoryLabEvents = (() => {
+  const { homeDeadline, clinicAppointment } = window.MemoryLabSchema;
+  return [
+    homeDeadline({ id: 1, patientId: 'anna-bakker', date: '2026-05-05', status: 'completed' }),
+    homeDeadline({ id: 2, patientId: 'johan-de-vries', date: '2026-05-05', status: 'completed' }),
+    homeDeadline({ id: 3, patientId: 'greet-janssen', date: '2026-05-06', status: 'completed' }),
+    homeDeadline({ id: 4, patientId: 'pieter-mulder', date: '2026-05-06', status: 'completed' }),
+    homeDeadline({ id: 5, patientId: 'marieke-smit', date: '2026-05-11', status: 'completed' }),
+    homeDeadline({ id: 6, patientId: 'henk-visser', date: '2026-05-12', status: 'completed' }),
+    homeDeadline({ id: 7, patientId: 'anna-bakker', date: '2026-05-12', status: 'completed', note: 'Session had interruption' }),
+    homeDeadline({ id: 8, patientId: 'johan-de-vries', date: '2026-05-13', status: 'completed' }),
+    homeDeadline({ id: 9, patientId: 'greet-janssen', date: '2026-05-13', status: 'overdue', note: 'Missed - no response to reminder' }),
+    homeDeadline({ id: 10, patientId: 'pieter-mulder', date: '2026-05-14', status: 'overdue' }),
+    homeDeadline({ id: 11, patientId: 'henk-visser', date: '2026-05-18', status: 'due' }),
+    homeDeadline({ id: 12, patientId: 'marieke-smit', date: '2026-05-19' }),
+    homeDeadline({ id: 13, patientId: 'anna-bakker', date: '2026-05-19', note: 'Due before results discussion', reminderDaysBefore: 2 }),
+    homeDeadline({ id: 14, patientId: 'johan-de-vries', date: '2026-05-21' }),
+    homeDeadline({ id: 15, patientId: 'greet-janssen', date: '2026-05-20', note: 'Reminder sent' }),
+    homeDeadline({ id: 16, patientId: 'pieter-mulder', date: '2026-05-21' }),
+    homeDeadline({ id: 17, patientId: 'henk-visser', date: '2026-05-25' }),
+    homeDeadline({ id: 18, patientId: 'marieke-smit', date: '2026-05-26' }),
+    homeDeadline({ id: 19, patientId: 'anna-bakker', date: '2026-05-26', note: 'Weekly home task', reminderDaysBefore: 2 }),
+    homeDeadline({ id: 20, patientId: 'johan-de-vries', date: '2026-05-28' }),
+    clinicAppointment({ id: 21, patientId: null, date: '2026-05-18', time: '08:30', endTime: '09:15', title: 'GP staff meeting', note: 'Monthly dept update' }),
+    clinicAppointment({ id: 22, patientId: null, date: '2026-05-20', time: '12:00', endTime: '12:45', title: 'Lunch with Dr. Smit' }),
+    clinicAppointment({ id: 23, patientId: null, date: '2026-05-22', time: '09:00', endTime: '10:00', title: 'Admin block', note: 'Reports and referrals' }),
+    clinicAppointment({ id: 24, patientId: null, date: '2026-05-27', time: '14:00', endTime: '14:45', title: 'PCL update call', note: 'Precision Cognition Labs monthly check-in' }),
+    clinicAppointment({ id: 25, patientId: 'anna-bakker', date: '2026-05-19', time: '11:00', endTime: '11:45', title: 'Anna Bakker - results discussion', purpose: 'Results discussion', note: 'Discuss SGMA trend and latest caution session' }),
+    clinicAppointment({ id: 26, patientId: 'anna-bakker', date: '2026-05-26', time: '11:00', endTime: '11:30', title: 'Anna Bakker - assessment', purpose: 'Assessment', note: 'Same-time overlap test with home deadline' }),
+  ];
+})();
