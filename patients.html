@@ -149,34 +149,16 @@
 <script src="data/events.js"></script>
 <script src="data/notes.js"></script>
 <script src="data/index.js"></script>
+<script src="ui/helpers.js"></script>
 <script>
 const ML = window.MemoryLabData;
+const UI = window.MemoryLabUI;
 let activeFilter = 'all';
 let searchTerm = '';
 
-function profileUrl(patient) {
-  return 'patient_profile.html?patient=' + encodeURIComponent(patient.id);
-}
-
-function scheduleUrl(patient) {
-  return 'schedule.html?patient=' + encodeURIComponent(patient.id);
-}
-
 function trendLabel(patient) {
   const trend = ML.patientClinicalSummary(patient.id).trend;
-  if (trend === 'declining') return '<span class="trend declining"><span>&#8600;</span>Declining</span>';
-  if (trend === 'new') return '<span class="trend new"><span>&#8226;</span>New</span>';
-  return '<span class="trend stable"><span>&#8594;</span>Stable</span>';
-}
-
-function patientBadges(patient) {
-  const uniqueBadges = ML.patientClinicalSummary(patient.id).badges.map(badge => ({ cls: badge.type, label: badge.label, filter: badge.filter }));
-  if (!uniqueBadges.length) uniqueBadges.push({ cls: '', label: 'No active flags' });
-  return uniqueBadges.map(badge => {
-    const filterAttr = badge.filter ? ` data-filter="${badge.filter}" role="button" tabindex="0" title="Filter by ${badge.label}"` : '';
-    const filterClass = badge.filter ? ' filterable' : '';
-    return `<span class="badge ${badge.cls}${filterClass}"${filterAttr}>${badge.label}</span>`;
-  }).join('');
+  return UI.trendHtml(trend, { compact: true });
 }
 
 function searchableLabels(patient) {
@@ -224,7 +206,7 @@ function renderPatients() {
     const sgma = Math.round(ML.sofToSGMA(latest.sof));
 
     return `
-      <tr class="patient-row" onclick="window.location.href='${profileUrl(patient)}'">
+      <tr class="patient-row" onclick="window.location.href='${UI.patientProfileUrl(patient)}'">
         <td>
           <div class="patient-cell">
             <div class="patient-initials">${patient.initials}</div>
@@ -239,11 +221,11 @@ function renderPatients() {
           <div class="score-sub">Latest: ${latest.date}</div>
         </td>
         <td>${trendLabel(patient)}</td>
-        <td><div class="badges">${patientBadges(patient)}</div></td>
+        <td><div class="badges">${UI.patientBadgesHtml(ML.patientClinicalSummary(patient.id).badges, { emptyLabel: 'No active flags' })}</div></td>
         <td>
           <div class="actions" onclick="event.stopPropagation()">
-            <button class="btn-sm primary" onclick="window.location.href='${profileUrl(patient)}'">Open profile</button>
-            <button class="btn-sm" onclick="window.location.href='${scheduleUrl(patient)}'">Schedule</button>
+            <button class="btn-sm primary" onclick="window.location.href='${UI.patientProfileUrl(patient)}'">Open profile</button>
+            <button class="btn-sm" onclick="window.location.href='${UI.scheduleUrl(patient)}'">Schedule</button>
           </div>
         </td>
       </tr>`;

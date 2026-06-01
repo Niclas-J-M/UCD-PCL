@@ -239,8 +239,10 @@
 <script src="data/events.js"></script>
 <script src="data/notes.js"></script>
 <script src="data/index.js"></script>
+<script src="ui/helpers.js"></script>
 <script>
 const ML = window.MemoryLabData;
+const UI = window.MemoryLabUI;
 let SELECTED_PATIENT = ML.getPatientFromUrl();
 let SESSIONS = ML.sessionsForPatient(SELECTED_PATIENT.id);
 let SESSION_INDEX = getSessionIndex();
@@ -280,9 +282,6 @@ function sofAtPercentile(age,p,off){ return predictedSoF(age,off) - normInvCDF(p
 function sofToSGMA(sof){ return 140/(1+Math.exp(15*(sof-0.33)))+30; }
 function calcPercentile(age,sof,off){ return normCDF((predictedSoF(age,off)-sof)/SIGMA)*100; }
 function ordinal(n){const s=Math.round(n),j=s%10,k=s%100;if(j===1&&k!==11)return s+'st';if(j===2&&k!==12)return s+'nd';if(j===3&&k!==13)return s+'rd';return s+'th';}
-function profileUrl(patient){return 'patient_profile.html?patient=' + encodeURIComponent(patient.id);}
-function sessionUrl(patient, sessionIndex){return 'patient_session.html?patient=' + encodeURIComponent(patient.id) + '&session=' + encodeURIComponent(sessionIndex);}
-
 function markPatientEducationOption() {
   const select = document.getElementById('eduSelect');
   if (!select) return;
@@ -310,7 +309,7 @@ function setText(id, text) {
 function renderShell() {
   const edu = ML.educationFor(SELECTED_PATIENT.educationCode);
   document.title = 'MemoryLab - ' + SELECTED_PATIENT.name + ' session ' + (SESSION_INDEX + 1);
-  document.getElementById('patientCrumb').href = profileUrl(SELECTED_PATIENT);
+  document.getElementById('patientCrumb').href = UI.patientProfileUrl(SELECTED_PATIENT);
   setText('patientCrumb', SELECTED_PATIENT.name);
   setText('sessionCrumb', 'Session ' + (SESSION_INDEX + 1));
   setText('patientAvatar', SELECTED_PATIENT.initials);
@@ -319,9 +318,9 @@ function renderShell() {
   title.classList.add('linked');
   title.tabIndex = 0;
   title.setAttribute('role', 'link');
-  title.onclick = () => { window.location.href = profileUrl(SELECTED_PATIENT); };
+  title.onclick = () => { window.location.href = UI.patientProfileUrl(SELECTED_PATIENT); };
   title.onkeydown = event => {
-    if (event.key === 'Enter') window.location.href = profileUrl(SELECTED_PATIENT);
+    if (event.key === 'Enter') window.location.href = UI.patientProfileUrl(SELECTED_PATIENT);
   };
   document.getElementById('headerTags').innerHTML = `
     <span class="ph-tag"><b>${SESSION.fullDate}</b></span>
@@ -329,16 +328,16 @@ function renderShell() {
     <span class="ph-tag">Status: <b>${SESSION.quality === 'caution' ? 'Quality review' : 'Good quality'}</b></span>
     <span class="ph-tag"><b>${SESSIONS.length}</b> total sessions</span>
   `;
-  document.getElementById('backBtn').onclick = () => { window.location.href = profileUrl(SELECTED_PATIENT); };
+  document.getElementById('backBtn').onclick = () => { window.location.href = UI.patientProfileUrl(SELECTED_PATIENT); };
   const prevBtn = document.getElementById('prevSessionBtn');
   const nextBtn = document.getElementById('nextSessionBtn');
   prevBtn.disabled = SESSION_INDEX <= 0;
   nextBtn.disabled = SESSION_INDEX >= SESSIONS.length - 1;
   prevBtn.onclick = () => {
-    if (SESSION_INDEX > 0) window.location.href = sessionUrl(SELECTED_PATIENT, SESSION_INDEX - 1);
+    if (SESSION_INDEX > 0) window.location.href = UI.patientSessionUrl(SELECTED_PATIENT, SESSION_INDEX - 1);
   };
   nextBtn.onclick = () => {
-    if (SESSION_INDEX < SESSIONS.length - 1) window.location.href = sessionUrl(SELECTED_PATIENT, SESSION_INDEX + 1);
+    if (SESSION_INDEX < SESSIONS.length - 1) window.location.href = UI.patientSessionUrl(SELECTED_PATIENT, SESSION_INDEX + 1);
   };
   markPatientEducationOption();
   document.getElementById('eduSelect').value = SELECTED_PATIENT.educationCode;

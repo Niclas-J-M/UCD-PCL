@@ -186,6 +186,7 @@
   .hist-item:hover{background:#FAFAFB;}
   .hist-item:last-child{border-bottom:none;}
   .hist-list.expanded{max-height:320px;overflow-y:auto;border-bottom:1px solid #EEF0F3;box-shadow:inset 0 -10px 12px -14px rgba(26,35,64,.35);}
+  .patients-empty{padding:18px 20px;color:var(--text-soft);font-size:13px;}
   .hist-session{font-weight:700;color:var(--navy);}
   .hist-date{color:var(--text-soft);}
   .hist-sgma{font-weight:700;color:var(--navy);}
@@ -226,20 +227,14 @@
   <div class="breadcrumb">
     <a href="dashboard.html">Dashboard</a><span class="sep">&rsaquo;</span>
     <a href="patients.html">Patients</a><span class="sep">&rsaquo;</span>
-    <span class="current">Anna Bakker</span>
+    <span class="current">Loading patient</span>
   </div>
 
   <div class="patient-header">
-    <div class="patient-avatar">AB</div>
+    <div class="patient-avatar">--</div>
     <div class="ph-main">
-      <h1>Anna Bakker</h1>
-      <div class="ph-tags">
-        <span class="ph-tag"><b>72</b> years</span>
-        <span class="ph-tag">Education: <b>Vocational (MBO/VMBO)</b></span>
-        <span class="ph-tag">Status: <b>Monitoring — MCI screen</b></span>
-        <span class="ph-tag"><b>14</b> sessions completed</span>
-        <span class="ph-tag">Patient since <b>Jan 2026</b></span>
-      </div>
+      <h1>Loading patient</h1>
+      <div class="ph-tags"></div>
     </div>
     <div class="ph-actions">
       <button class="btn-outline" onclick="window.location.href='schedule.html'">Schedule session</button>
@@ -253,7 +248,7 @@
       <div class="panel">
         <div class="panel-head">
           <h2>SGMA trend over time</h2>
-          <span class="subtitle">14 sessions &middot; Jan&ndash;May 2026</span>
+          <span class="subtitle">Loading sessions</span>
           <div class="trend-controls" aria-label="Trend quality filter">
             <button class="trend-filter active" type="button" data-quality-filter="all">All sessions</button>
             <button class="trend-filter" type="button" data-quality-filter="good">Good quality only</button>
@@ -263,16 +258,9 @@
           <canvas id="trajPlot" class="traj-canvas" height="240"></canvas>
           <div class="chart-tooltip" id="trajTooltip"></div>
           <div class="traj-legend">
-            <div class="item"><span class="ln" style="background:var(--red);"></span>Anna&rsquo;s SGMA score per session</div>
-            <div class="item"><span class="mk"></span>Latest session (12 May)</div>
-            <div class="item" style="color:var(--text-faint);">Bands = norm categories for age 72 at selected education level</div>
+            <div class="item">Loading trend...</div>
           </div>
-          <div class="interpretation" style="margin-top:14px;">
-            Anna&rsquo;s SGMA score has <b>declined steadily</b> from ~85 in January to 53 in May,
-            moving from the <b>above average</b> band into the <b>below average</b> band.
-            The consistent direction across 14 sessions strengthens the reliability of this trend.
-            Recommend discussing follow-up neuropsychological assessment.
-          </div>
+          <div class="interpretation" style="margin-top:14px;"></div>
         </div>
       </div>
 
@@ -288,14 +276,9 @@
           <button class="hist-sort" type="button" data-sort="quality">Quality</button>
         </div>
         <div class="hist-list">
-          <div class="hist-item">
-            <span class="hist-session">Session 14</span>
-            <span class="hist-date">12 May</span>
-            <span class="hist-sgma">SGMA 53</span>
-            <span class="hist-q caution">Caution</span>
-          </div>
+          <div class="patients-empty">Loading sessions...</div>
         </div>
-        <div class="panel-foot"><button class="btn-ghost" type="button">View all 14 sessions</button></div>
+        <div class="panel-foot"><button class="btn-ghost" type="button">View all sessions</button></div>
       </div>
 
     </div>
@@ -305,20 +288,7 @@
       <div class="panel">
         <div class="panel-head"><h2>Consultation notes</h2></div>
         <div>
-          <div class="consult-q">
-            <div class="cq-label">Primary concern today</div>
-            <div class="cq-answer empty">Not recorded yet &mdash; ask during visit</div>
-          </div>
-          <div class="consult-q">
-            <div class="cq-label">Medication questions</div>
-            <div class="cq-answer">Asked whether blood pressure medication affects memory.</div>
-            <div class="cq-prev">From last visit &middot; 14 Apr</div>
-          </div>
-          <div class="consult-q">
-            <div class="cq-label">Goal for next session</div>
-            <div class="cq-answer">Patient wants to keep doing weekly sessions; daughter will help set reminders.</div>
-            <div class="cq-prev">From last visit &middot; 14 Apr</div>
-          </div>
+          <div class="patients-empty">Loading notes...</div>
         </div>
         <div class="note-editor hidden" id="noteEditor">
           <div class="note-field">
@@ -344,22 +314,9 @@
       </div>
 
       <div class="panel">
-        <div class="panel-head"><h2>Questions from Anna</h2></div>
+        <div class="panel-head"><h2>Questions</h2></div>
         <div>
-          <div class="pq-item">
-            <div class="pq-bubble">?</div>
-            <div>
-              <div class="pq-text">&ldquo;Is it normal that some weeks feel much harder than others?&rdquo;</div>
-              <div class="pq-date">Submitted 9 May via patient app</div>
-            </div>
-          </div>
-          <div class="pq-item">
-            <div class="pq-bubble">?</div>
-            <div>
-              <div class="pq-text">&ldquo;Should my husband do the test too?&rdquo;</div>
-              <div class="pq-date">Submitted 2 May via patient app</div>
-            </div>
-          </div>
+          <div class="patients-empty">Loading questions...</div>
         </div>
       </div>
     </div>
@@ -372,8 +329,10 @@
 <script src="data/events.js"></script>
 <script src="data/notes.js"></script>
 <script src="data/index.js"></script>
+<script src="ui/helpers.js"></script>
 <script>
 const ML = window.MemoryLabData;
+const UI = window.MemoryLabUI;
 let SELECTED_PATIENT = ML.getPatientFromUrl();
 let SELECTED_SESSIONS = ML.sessionsForPatient(SELECTED_PATIENT.id);
 let showAllSessions = false;
@@ -437,7 +396,7 @@ function ordinal(n) {
   return s+'th';
 }
 
-/* ── Patient data from shared mock-data.js ── */
+/* Patient data from shared MemoryLabData service */
 let PATIENT = { age: SELECTED_PATIENT.age, observedSoF: ML.latestSession(SELECTED_PATIENT).sof };
 let SESSIONS = SELECTED_SESSIONS;
 
@@ -449,18 +408,6 @@ function setText(selector, text) {
 function setHtml(selector, html) {
   const el = document.querySelector(selector);
   if (el) el.innerHTML = html;
-}
-
-function profileUrl(patient) {
-  return 'patient_profile.html?patient=' + encodeURIComponent(patient.id);
-}
-
-function patientViewUrl(patient) {
-  return 'patients_view.html?patient=' + encodeURIComponent(patient.id);
-}
-
-function sessionDetailUrl(patient, sessionIndex) {
-  return 'patient_session.html?patient=' + encodeURIComponent(patient.id) + '&session=' + encodeURIComponent(sessionIndex);
 }
 
 function qualityCopy(session) {
@@ -551,9 +498,9 @@ function renderProfileShell() {
   `);
 
   const scheduleButton = document.querySelector('.ph-actions .btn-outline');
-  if (scheduleButton) scheduleButton.onclick = () => { window.location.href = 'schedule.html?patient=' + SELECTED_PATIENT.id + '&action=new-session'; };
+  if (scheduleButton) scheduleButton.onclick = () => { window.location.href = UI.scheduleUrl(SELECTED_PATIENT, { action: 'new-session' }); };
   const patientButton = document.querySelector('.ph-actions .btn-primary');
-  if (patientButton) patientButton.onclick = () => { window.location.href = patientViewUrl(SELECTED_PATIENT); };
+  if (patientButton) patientButton.onclick = () => { window.location.href = UI.patientViewUrl(SELECTED_PATIENT); };
 
   setText('.col-main .panel:first-child .subtitle', SELECTED_SESSIONS.length + ' sessions · ' + SELECTED_SESSIONS[0].label.split(' ')[0] + '–' + latest.label.split(' ')[0] + ' 2026');
   setHtml('.traj-legend', `
@@ -735,12 +682,12 @@ function renderRecentSessions() {
   `).join('');
   panel.querySelectorAll('.hist-item').forEach(row => {
     row.addEventListener('click', () => {
-      window.location.href = sessionDetailUrl(SELECTED_PATIENT, row.dataset.sessionIndex);
+      window.location.href = UI.patientSessionUrl(SELECTED_PATIENT, row.dataset.sessionIndex);
     });
     row.addEventListener('keydown', event => {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
-        window.location.href = sessionDetailUrl(SELECTED_PATIENT, row.dataset.sessionIndex);
+        window.location.href = UI.patientSessionUrl(SELECTED_PATIENT, row.dataset.sessionIndex);
       }
     });
   });
@@ -1118,7 +1065,7 @@ function setupTrajInteraction() {
   });
   canvas.addEventListener('click', event => {
     const point = nearestTrajPoint(event.clientX, event.clientY);
-    if (point) window.location.href = sessionDetailUrl(SELECTED_PATIENT, point.index);
+    if (point) window.location.href = UI.patientSessionUrl(SELECTED_PATIENT, point.index);
   });
 }
 
@@ -1128,3 +1075,4 @@ window.addEventListener('resize', ()=> redrawCharts());
 </script>
 </body>
 </html>
+

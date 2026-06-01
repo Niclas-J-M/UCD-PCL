@@ -430,11 +430,11 @@ body{font-family:'Segoe UI','Helvetica Neue',system-ui,sans-serif;background:var
 <script src="data/events.js"></script>
 <script src="data/notes.js"></script>
 <script src="data/index.js"></script>
+<script src="ui/helpers.js"></script>
 <script>
 const ML = window.MemoryLabData;
-/* ════════════════════════════════════════════════════════
-   Here i just put some generated harcoded data that is stored in mock-data
-════════════════════════════════════════════════════════ */
+const UI = window.MemoryLabUI;
+/* Shared local schedule data from MemoryLabData */
 const TODAY = ML.TODAY;
 const PATIENTS = ML.patients;
 const PATIENT_EVENT_COLOR = '#4A6FA5';
@@ -462,7 +462,7 @@ let selectedEvt = null;
    HELPERS
 ════════════════════════════════════════════════════════ */
 function sameDay(a,b){ return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate(); }
-function fmtDate(d){ return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
+function fmtDate(d){ return UI.formatDate(d); }
 function fmtDay(d){ return d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'}); }
 function getOrdinal(n){ const s=n%10,k=n%100; if(s===1&&k!==11)return n+'st'; if(s===2&&k!==12)return n+'nd'; if(s===3&&k!==13)return n+'rd'; return n+'th'; }
 
@@ -813,7 +813,7 @@ function showPatientPanel(e){
           </div>`).join('')}
       </div>
       <div class="pd-foot" style="display:flex;flex-direction:column;gap:8px;">
-        <button class="btn-sm primary" onclick="window.location.href='patient_profile.html?patient=${p.id}'">Open full profile</button>
+        <button class="btn-sm primary" onclick="window.location.href='${UI.patientProfileUrl(p)}'">Open full profile</button>
         <button class="btn-sm" onclick="resetSidePanel()">&#8592; Back to agenda</button>
       </div>
     </div>`;

@@ -545,7 +545,7 @@
   <div class="page-head">
     <div>
       <h1>Dashboard</h1>
-      <div class="date">Thursday, 14 May 2026</div>
+      <div class="date">Loading dashboard</div>
     </div>
     <button class="btn-primary" onclick="window.location.href='schedule.html'">
       <span style="font-size:15px;line-height:1;">+</span> Schedule assessment
@@ -556,17 +556,17 @@
   <div class="summary">
     <div class="stat s-total">
       <div class="label">Active patients</div>
-      <div class="value">24</div>
+      <div class="value">--</div>
       <div class="sub">Under your care</div>
     </div>
     <div class="stat s-week">
       <div class="label">Completed this week</div>
-      <div class="value">11</div>
+      <div class="value">--</div>
       <div class="sub">Sessions ready to review</div>
     </div>
     <div class="stat s-flag">
       <div class="label">Flagged for review</div>
-      <div class="value">2</div>
+      <div class="value">--</div>
       <div class="sub">Declining trend or low session quality</div>
     </div>
   </div>
@@ -586,163 +586,7 @@
       </div>
 
       <div class="patient-grid">
-
-        <!-- Patient card 1 — flagged, declining -->
-        <a class="patient-card" href="patient_profile.html">
-          <div class="pc-top">
-            <div>
-              <div class="pc-name">Anna Bakker</div>
-              <div class="pc-sub">72 yrs · 14 sessions</div>
-            </div>
-            <div class="pc-badges">
-              <span class="badge quality">Check quality</span>
-            </div>
-          </div>
-          <div class="pc-score">
-            <div class="pc-score-label">
-              <span>SGMA score</span>
-              <b>53</b>
-            </div>
-            <div class="normbar">
-              <div class="typical" style="left:30%;width:40%;"></div>
-              <div class="marker elevated" style="left:16%;"></div>
-            </div>
-          </div>
-          <div class="pc-foot">
-            <span class="pc-last">Last session: 12 May</span>
-            <span class="trend declining"><span class="arrow">&#8600;</span> Declining</span>
-          </div>
-        </a>
-
-        <!-- Patient card 2 — stable -->
-        <a class="patient-card" href="patient_profile.html">
-          <div class="pc-top">
-            <div>
-              <div class="pc-name">Johan de Vries</div>
-              <div class="pc-sub">68 yrs · 9 sessions</div>
-            </div>
-            <div class="pc-badges"></div>
-          </div>
-          <div class="pc-score">
-            <div class="pc-score-label">
-              <span>SGMA score</span>
-              <b>80</b>
-            </div>
-            <div class="normbar">
-              <div class="typical" style="left:30%;width:40%;"></div>
-              <div class="marker" style="left:36%;"></div>
-            </div>
-          </div>
-          <div class="pc-foot">
-            <span class="pc-last">Last session: 13 May</span>
-            <span class="trend stable"><span class="arrow">&#8594;</span> Stable</span>
-          </div>
-        </a>
-
-        <!-- Patient card 3 — session due -->
-        <a class="patient-card" href="patient_profile.html">
-          <div class="pc-top">
-            <div>
-              <div class="pc-name">Greet Janssen</div>
-              <div class="pc-sub">79 yrs · 21 sessions</div>
-            </div>
-            <div class="pc-badges">
-              <span class="badge new-session">New session</span>
-            </div>
-          </div>
-          <div class="pc-score">
-            <div class="pc-score-label">
-              <span>SGMA score</span>
-              <b>71</b>
-            </div>
-            <div class="normbar">
-              <div class="typical" style="left:30%;width:40%;"></div>
-              <div class="marker" style="left:29%;"></div>
-            </div>
-          </div>
-          <div class="pc-foot">
-            <span class="pc-last">Last session: 28 Apr</span>
-            <span class="trend stable"><span class="arrow">&#8594;</span> Stable</span>
-          </div>
-        </a>
-
-        <!-- Patient card 4 — flagged declining + due -->
-        <a class="patient-card" href="patient_profile.html">
-          <div class="pc-top">
-            <div>
-              <div class="pc-name">Pieter Mulder</div>
-              <div class="pc-sub">74 yrs · 16 sessions</div>
-            </div>
-            <div class="pc-badges">
-              <span class="badge new-session">New session</span>
-            </div>
-          </div>
-          <div class="pc-score">
-            <div class="pc-score-label">
-              <span>SGMA score</span>
-              <b>57</b>
-            </div>
-            <div class="normbar">
-              <div class="typical" style="left:30%;width:40%;"></div>
-              <div class="marker elevated" style="left:19%;"></div>
-            </div>
-          </div>
-          <div class="pc-foot">
-            <span class="pc-last">Last session: 30 Apr</span>
-            <span class="trend declining"><span class="arrow">&#8600;</span> Declining</span>
-          </div>
-        </a>
-
-        <!-- Patient card 5 — new patient -->
-        <a class="patient-card" href="patient_profile.html">
-          <div class="pc-top">
-            <div>
-              <div class="pc-name">Marieke Smit</div>
-              <div class="pc-sub">66 yrs · 2 sessions</div>
-            </div>
-            <div class="pc-badges"></div>
-          </div>
-          <div class="pc-score">
-            <div class="pc-score-label">
-              <span>SGMA score</span>
-              <b>85</b>
-            </div>
-            <div class="normbar">
-              <div class="typical" style="left:30%;width:40%;"></div>
-              <div class="marker" style="left:39%;"></div>
-            </div>
-          </div>
-          <div class="pc-foot">
-            <span class="pc-last">Last session: 11 May</span>
-            <span class="trend new"><span class="arrow">&#8226;</span> New patient</span>
-          </div>
-        </a>
-
-        <!-- Patient card 6 — improving -->
-        <a class="patient-card" href="patient_profile.html">
-          <div class="pc-top">
-            <div>
-              <div class="pc-name">Henk Visser</div>
-              <div class="pc-sub">71 yrs · 12 sessions</div>
-            </div>
-            <div class="pc-badges"></div>
-          </div>
-          <div class="pc-score">
-            <div class="pc-score-label">
-              <span>SGMA score</span>
-              <b>75</b>
-            </div>
-            <div class="normbar">
-              <div class="typical" style="left:30%;width:40%;"></div>
-              <div class="marker" style="left:32%;"></div>
-            </div>
-          </div>
-          <div class="pc-foot">
-            <span class="pc-last">Last session: 13 May</span>
-            <span class="trend stable"><span class="arrow">&#8594;</span> Stable</span>
-          </div>
-        </a>
-
+        <div class="patients-empty" style="grid-column:1/-1;">Loading patients...</div>
       </div>
       <div class="patient-grid-foot">
         <div class="patient-count" id="patientGridCount"></div>
@@ -772,39 +616,7 @@
           <h2>Upcoming schedule</h2>
         </div>
         <div class="schedule-list">
-          <div class="schedule-item">
-            <div class="sched-date">
-              <div class="day">15</div>
-              <div class="mon">May</div>
-            </div>
-            <div class="sched-info">
-              <div class="pname">Greet Janssen</div>
-              <div class="ptype">At-home deadline due</div>
-            </div>
-            <span class="sched-status confirmed">Due today</span>
-          </div>
-          <div class="schedule-item">
-            <div class="sched-date">
-              <div class="day">16</div>
-              <div class="mon">May</div>
-            </div>
-            <div class="sched-info">
-              <div class="pname">Pieter Mulder</div>
-              <div class="ptype">At-home deadline due</div>
-            </div>
-            <span class="sched-status pending">Reminder</span>
-          </div>
-          <div class="schedule-item">
-            <div class="sched-date">
-              <div class="day">19</div>
-              <div class="mon">May</div>
-            </div>
-            <div class="sched-info">
-              <div class="pname">Sophie Hendriks</div>
-              <div class="ptype">In-person appointment</div>
-            </div>
-            <span class="sched-status confirmed">Confirmed</span>
-          </div>
+          <div class="patients-empty">Loading schedule...</div>
         </div>
         <div class="panel-foot">
           <button class="btn-ghost" onclick="window.location.href='schedule.html'">View full schedule</button>
@@ -817,30 +629,7 @@
           <h2>Needs your attention</h2>
         </div>
         <div class="attention-list">
-          <div class="reminder-item">
-            <div class="rem-dot"></div>
-            <div>
-              <div class="rem-text"><b>Anna Bakker</b> shows a declining trend over the last 3 sessions.</div>
-              <div class="rem-time">Flagged 12 May</div>
-            </div>
-            <div class="rem-chevron">&rsaquo;</div>
-          </div>
-          <div class="reminder-item">
-            <div class="rem-dot soft"></div>
-            <div>
-              <div class="rem-text"><b>Pieter Mulder</b> last session was interrupted — review session quality before interpreting.</div>
-              <div class="rem-time">Flagged 30 Apr</div>
-            </div>
-            <div class="rem-chevron">&rsaquo;</div>
-          </div>
-          <div class="reminder-item">
-            <div class="rem-dot soft"></div>
-            <div>
-              <div class="rem-text"><b>Greet Janssen</b> has not completed her scheduled session.</div>
-              <div class="rem-time">Due since 28 Apr</div>
-            </div>
-            <div class="rem-chevron">&rsaquo;</div>
-          </div>
+          <div class="patients-empty">Loading reminders...</div>
         </div>
       </div>
 
@@ -855,18 +644,18 @@
 <script src="data/events.js"></script>
 <script src="data/notes.js"></script>
 <script src="data/index.js"></script>
+<script src="ui/helpers.js"></script>
 <script>
 const ML = window.MemoryLabData;
+const UI = window.MemoryLabUI;
 const DASHBOARD_PATIENT_LIMIT = 6;
 let activePatientFilter = 'all';
 
-function trendHtml(trend) {
-  if (trend === 'declining') return '<span class="trend declining"><span class="arrow">&#8600;</span> Declining</span>';
-  if (trend === 'new') return '<span class="trend new"><span class="arrow">&#8226;</span> New patient</span>';
-  return '<span class="trend stable"><span class="arrow">&#8594;</span> Stable</span>';
-}
-
 function renderDashboardSummary() {
+  const date = document.querySelector('.page-head .date');
+  if (date && ML.TODAY) {
+    date.textContent = ML.TODAY.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  }
   const stats = document.querySelectorAll('.summary .stat');
   if (stats[0]) stats[0].querySelector('.value').textContent = ML.patients.length;
   if (stats[1]) stats[1].querySelector('.value').textContent = ML.completedThisWeek();
@@ -902,10 +691,10 @@ function renderPatientGrid() {
     const sgma = Math.round(ML.sofToSGMA(latest.sof));
     const marker = ML.dashboardMarkerPercent(patient);
     const elevated = summary.needsReview || marker < 25 ? ' elevated' : '';
-    const badges = summary.badges.map(badge => `<span class="badge ${badge.type}">${badge.label}</span>`).join('');
+    const badges = UI.patientBadgesHtml(summary.badges);
 
     return `
-      <a class="patient-card" href="patient_profile.html?patient=${patient.id}">
+      <a class="patient-card" href="${UI.patientProfileUrl(patient)}">
         <div class="pc-top">
           <div>
             <div class="pc-name">${patient.name}</div>
@@ -925,7 +714,7 @@ function renderPatientGrid() {
         </div>
         <div class="pc-foot">
           <span class="pc-last">Last session: ${latest.date}</span>
-          ${trendHtml(summary.trend)}
+          ${UI.trendHtml(summary.trend)}
         </div>
       </a>`;
   }).join('');
@@ -969,7 +758,7 @@ function renderUpcomingSessions() {
     const detail = isDeadline
       ? 'At-home deadline due'
       : 'In-person appointment' + (patient ? ' · ' + patient.name : '');
-    const href = patient ? `schedule.html?patient=${patient.id}` : 'schedule.html';
+    const href = patient ? UI.scheduleUrl(patient) : UI.scheduleUrl();
 
     return `
       <div class="schedule-item" onclick="window.location.href='${href}'">
@@ -995,7 +784,7 @@ function renderReminders() {
   const bodyItems = ML.dashboardReminders(3).map(item => {
     const patient = ML.getPatient(item.patientId);
     return `
-      <div class="reminder-item" onclick="window.location.href='patient_profile.html?patient=${patient.id}'">
+      <div class="reminder-item" onclick="window.location.href='${UI.patientProfileUrl(patient)}'">
         <div class="rem-dot ${item.tone === 'soft' ? 'soft' : ''}"></div>
         <div>
           <div class="rem-text"><b>${patient.name}</b> ${item.text.replace(patient.name + ' ', '')}</div>
