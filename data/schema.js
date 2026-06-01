@@ -48,13 +48,18 @@ window.MemoryLabSchema = (() => {
   }
 
   function homeDeadline(data) {
+    const hasLeadMinutes = Object.prototype.hasOwnProperty.call(data, 'reminderLeadMinutes');
+    const hasDaysBefore = Object.prototype.hasOwnProperty.call(data, 'reminderDaysBefore');
+    const reminderLeadMinutes = hasLeadMinutes
+      ? data.reminderLeadMinutes
+      : (hasDaysBefore ? data.reminderDaysBefore * 24 * 60 : 24 * 60);
     const deadline = {
       type: 'home_deadline',
       title: 'At-home SGMA deadline',
       status: 'scheduled',
-      reminderDaysBefore: 1,
       ...data,
       date: dateFrom(data.date),
+      reminderLeadMinutes,
     };
     delete deadline.time;
     delete deadline.endTime;

@@ -362,29 +362,36 @@ body{font-family:'Segoe UI','Helvetica Neue',system-ui,sans-serif;background:var
         <div class="form-row">
           <div class="form-field">
             <label>Repeat</label>
-            <select id="mRepeat">
-              <option value="once">Once</option>
-              <option value="daily">Daily</option>
-              <option value="weekly">Weekly</option>
-              <option value="custom">Every X days</option>
+            <select id="mRepeat" onchange="updateDeadlineRepeatFields()">
+              <option value="never">Never</option>
+              <option value="daily">Every day</option>
+              <option value="weekly">Every week</option>
+              <option value="biweekly">Every 2 weeks</option>
+              <option value="monthly">Every month</option>
             </select>
           </div>
           <div class="form-field">
-            <label>Count</label>
-            <input type="number" id="mRepeatCount" min="1" max="24" value="1">
+            <label>End repeat</label>
+            <select id="mRepeatEndMode" onchange="updateDeadlineRepeatFields()">
+              <option value="never">Never</option>
+              <option value="date">On date</option>
+            </select>
           </div>
-          <div class="form-field">
-            <label>Every days</label>
-            <input type="number" id="mRepeatEvery" min="1" max="90" value="7">
+          <div class="form-field" id="repeatEndDateField" style="display:none;">
+            <label>End date</label>
+            <input type="date" id="mRepeatEndDate">
           </div>
         </div>
         <div class="form-field">
           <label>Reminder</label>
           <select id="mReminder">
             <option value="0">No reminder</option>
-            <option value="1" selected>1 day before</option>
-            <option value="2">2 days before</option>
-            <option value="7">1 week before</option>
+            <option value="5">5 minutes before</option>
+            <option value="30">30 minutes before</option>
+            <option value="60">1 hour before</option>
+            <option value="1440" selected>1 day before</option>
+            <option value="2880">2 days before</option>
+            <option value="10080">1 week before</option>
           </select>
         </div>
       </div>
@@ -1004,11 +1011,12 @@ function openModalWithDate(d,time,patientId){
   document.getElementById('mDate').value=fmt;
   document.getElementById('mStartTime').value=startTime;
   document.getElementById('mEndTime').value=addOneHour(startTime);
-  document.getElementById('mRepeat').value='once';
-  document.getElementById('mRepeatCount').value='1';
-  document.getElementById('mRepeatEvery').value='7';
-  document.getElementById('mReminder').value='1';
+  document.getElementById('mRepeat').value='never';
+  document.getElementById('mRepeatEndMode').value='never';
+  document.getElementById('mRepeatEndDate').value=fmt;
+  document.getElementById('mReminder').value='1440';
   document.getElementById('mNotes').value='';
+  updateDeadlineRepeatFields();
   setModalPatient(patientId||'');
   document.getElementById('modalOverlay').classList.add('open');
 }
@@ -1029,34 +1037,89 @@ function setModalType(t){
   document.getElementById('endTimeField').style.display=isDeadline?'none':'';
   document.getElementById('mDateLabel').textContent=isDeadline?'Due date':'Date';
   document.getElementById('mNotes').placeholder=isDeadline?'Optional instructions or reminder notes...':'Appointment notes...';
+  updateDeadlineRepeatFields();
 }
+
+function updateDeadlineRepeatFields(){
+  const repeat=document.getElementById('mRepeat');
+  const endMode=document.getElementById('mRepeatEndMode');
+  const endDateField=document.getElementById('repeatEndDateField');
+  if(!repeat||!endMode||!endDateField) return;
+  const repeats=repeat.value!=='never';
+  endMode.disabled=!repeats;
+  if(!repeats) endMode.value='never';
+  endDateField.style.display=repeats&&endMode.value==='date'?'':'none';
+}
+
+function parseDateInput(value){
+  if(!value) return null;
+  const [y,m,d]=value.split('-').map(Number);
+  if([y,m,d].some(Number.isNaN)) return null;
+  return new Date(y,m-1,d);
+}
+
+function daysInMonth(year, monthIndex){
+  return new Date(year, monthIndex+1, 0).getDate();
+}
+
+function addCalendarMonths(date, months, preferredDay){
+  const next=new Date(date);
+  next.setDate(1);
+  next.setMonth(date.getMonth()+months);
+  next.setDate(Math.min(preferredDay, daysInMonth(next.getFullYear(), next.getMonth())));
+  return next;
+}
+
+function nextRepeatDate(startDate, repeat, step){
+  const next=new Date(startDate);
+  if(repeat==='daily') next.setDate(startDate.getDate()+step);
+  if(repeat==='weekly') next.setDate(startDate.getDate()+step*7);
+  if(repeat==='biweekly') next.setDate(startDate.getDate()+step*14);
+  if(repeat==='monthly') return addCalendarMonths(startDate, step, startDate.getDate());
+  return next;
+}
+
+function deadlineDates(startDate){
+  const repeat=document.getElementById('mRepeat').value;
+  const endMode=document.getElementById('mRepeatEndMode').value;
+  if(repeat==='never'||endMode==='never') return [new Date(startDate)];
+  const endDate=parseDateInput(document.getElementById('mRepeatEndDate').value);
+  if(!endDate){alert('Please choose an end date for the repeat.'); return null;}
+  if(endDate<startDate){alert('End repeat date must be on or after the due date.'); return null;}
+  const dates=[];
+  let step=0;
+  while(true){
+    const dueDate=nextRepeatDate(startDate, repeat, step);
+    if(dueDate>endDate) break;
+    dates.push(dueDate);
+    step+=1;
+    if(step>260){alert('Repeat range is too long for this prototype. Please choose an earlier end date.'); return null;}
+  }
+  return dates;
+}
+
 function saveEvent(){
   const dateVal=document.getElementById('mDate').value;
   const timeVal=document.getElementById('mStartTime').value;
   const endTimeVal=document.getElementById('mEndTime').value;
   if(!dateVal){alert('Please fill in a date.'); return;}
-  const [y,m,d]=dateVal.split('-').map(Number);
-  const newDate=new Date(y,m-1,d);
+  const newDate=parseDateInput(dateVal);
   const patientId=document.getElementById('mPatient').value;
   if(!patientId){alert('Please select a patient.'); return;}
   if(modalType==='deadline'){
-    const repeat=document.getElementById('mRepeat').value;
-    const count=Math.max(1, parseInt(document.getElementById('mRepeatCount').value,10)||1);
-    const everyDays=repeat==='daily' ? 1 : (repeat==='weekly' ? 7 : (repeat==='custom' ? Math.max(1, parseInt(document.getElementById('mRepeatEvery').value,10)||7) : 0));
-    const reminderDaysBefore=parseInt(document.getElementById('mReminder').value,10)||0;
-    for(let i=0;i<count;i++){
-      const dueDate=new Date(newDate);
-      if(everyDays) dueDate.setDate(newDate.getDate()+i*everyDays);
+    const dates=deadlineDates(newDate);
+    if(!dates) return;
+    const reminderLeadMinutes=parseInt(document.getElementById('mReminder').value,10)||0;
+    dates.forEach(dueDate=>{
       EVENTS.push(ML.makeHomeDeadline({
         id:EVENTS.length+1,
         patientId,
         date:dueDate,
         status:sameDay(dueDate,TODAY)?'due':'scheduled',
-        reminderDaysBefore,
+        reminderLeadMinutes,
         note:document.getElementById('mNotes').value
       }));
-      if(!everyDays) break;
-    }
+    });
   } else {
     if(!timeVal){alert('Please fill in a start time.'); return;}
     const patient=ML.getPatient(patientId);

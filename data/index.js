@@ -182,6 +182,21 @@ window.MemoryLabData = (() => {
 
   function dashboardReminders(count = 3) {
     const items = [];
+    function reminderLeadMinutes(event) {
+      if (typeof event.reminderLeadMinutes === 'number') return event.reminderLeadMinutes;
+      if (typeof event.reminderDaysBefore === 'number') return event.reminderDaysBefore * 24 * 60;
+      return 0;
+    }
+    function reminderLeadLabel(minutes) {
+      if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} before deadline`;
+      if (minutes < 24 * 60) {
+        const hours = minutes / 60;
+        return `${hours} hour${hours === 1 ? '' : 's'} before deadline`;
+      }
+      const days = minutes / (24 * 60);
+      if (days === 7) return '1 week before deadline';
+      return `${days} day${days === 1 ? '' : 's'} before deadline`;
+    }
     patients.forEach(patient => {
       const summary = patientClinicalSummary(patient.id);
       if (summary.newSession) {
@@ -195,15 +210,16 @@ window.MemoryLabData = (() => {
       }
     });
     events
-      .filter(event => isHomeDeadline(event) && event.status !== 'completed' && event.reminderDaysBefore)
+      .filter(event => isHomeDeadline(event) && event.status !== 'completed' && reminderLeadMinutes(event))
       .sort((a, b) => a.date - b.date)
       .forEach(event => {
         const patient = getPatient(event.patientId);
+        const leadMinutes = reminderLeadMinutes(event);
         items.push({
           patientId: patient.id,
           tone: event.status === 'overdue' ? 'alert' : 'soft',
           text: `${patient.name} reminder: at-home deadline due ${schema.displayDate(event.date)}`,
-          time: `${event.reminderDaysBefore} day${event.reminderDaysBefore === 1 ? '' : 's'} before deadline`,
+          time: reminderLeadLabel(leadMinutes),
         });
       });
     patients.forEach(patient => {
