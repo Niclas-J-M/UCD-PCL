@@ -64,6 +64,14 @@
   .qm .qm-value{font-size:20px;font-weight:700;color:var(--navy);margin-top:5px;line-height:1;}
   .qm .qm-note{font-size:11px;color:var(--text-faint);margin-top:5px;}
   .qm .qm-value.ok{color:var(--good);}
+  .qm.state-good{background:var(--good-soft);border-color:#CFE3DC;}
+  .qm.state-good .qm-value,.qm.state-good .qm-status{color:var(--good);}
+  .qm.state-watch{background:var(--watch-soft);border-color:#EAD3A8;}
+  .qm.state-watch .qm-value,.qm.state-watch .qm-status{color:var(--watch);}
+  .qm.state-alert{background:var(--accent-soft);border-color:#F0C9CF;}
+  .qm.state-alert .qm-value,.qm.state-alert .qm-status{color:var(--red);}
+  .qm-status{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.35px;margin-top:9px;}
+  .quality-reference{font-size:11.5px;color:var(--text-soft);line-height:1.5;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);}
   .score-triple{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px;}
   .st-card{border:1px solid var(--border);border-radius:10px;padding:16px 18px;}
   .st-card.primary{background:var(--navy);border-color:var(--navy);}
@@ -156,26 +164,32 @@
           <div class="qb-text"><b>Good quality session.</b> The session was completed without major interruptions and is suitable for trend interpretation.</div>
         </div>
         <div class="quality-metrics">
-          <div class="qm">
+          <div class="qm" id="trialsCard">
             <div class="qm-label">Trials completed<span class="tip-wrap"><span class="tip-icon">?</span><span class="tip-box">Number of individual test items the patient responded to.</span></span></div>
             <div class="qm-value" id="trialsVal">-</div>
+            <div class="qm-note" id="trialsNote"></div>
+            <div class="qm-status" id="trialsStatus">-</div>
           </div>
-          <div class="qm">
+          <div class="qm" id="interruptionsCard">
             <div class="qm-label">Interruptions<span class="tip-wrap"><span class="tip-icon">?</span><span class="tip-box">Gaps of more than 90 seconds detected during the session.</span></span></div>
             <div class="qm-value" id="interruptionsVal">-</div>
             <div class="qm-note" id="interruptionsNote"></div>
+            <div class="qm-status" id="interruptionsStatus">-</div>
           </div>
-          <div class="qm">
+          <div class="qm" id="nonRetrievalCard">
             <div class="qm-label">Non-retrieval time<span class="tip-wrap"><span class="tip-icon">?</span><span class="tip-box">Average time spent on items the patient ultimately could not recall.</span></span></div>
             <div class="qm-value" id="nonRetrievalVal">-</div>
             <div class="qm-note" id="nonRetrievalNote"></div>
+            <div class="qm-status" id="nonRetrievalStatus">-</div>
           </div>
-          <div class="qm">
+          <div class="qm" id="durationCard">
             <div class="qm-label">Session length<span class="tip-wrap"><span class="tip-icon">?</span><span class="tip-box">Total time from session start to last response.</span></span></div>
-            <div class="qm-value ok" id="durationVal">-</div>
+            <div class="qm-value" id="durationVal">-</div>
             <div class="qm-note" id="durationNote"></div>
+            <div class="qm-status" id="durationStatus">-</div>
           </div>
         </div>
+        <div class="quality-reference">Reference guide: these are prototype reliability checks for judging whether this session is suitable for SGMA interpretation. The formal norm model remains the age, education, SoF, and SGMA calculation below.</div>
       </div>
     </div>
 
@@ -293,6 +307,52 @@ function markPatientEducationOption() {
   });
 }
 
+function parseDurationToSeconds(duration) {
+  if (!duration || !duration.includes(':')) return null;
+  const parts = duration.split(':').map(Number);
+  if (parts.length !== 2 || parts.some(Number.isNaN)) return null;
+  return parts[0] * 60 + parts[1];
+}
+
+function qualityStateLabel(state) {
+  if (state === 'good') return 'Good';
+  if (state === 'watch') return 'Watch';
+  return 'Review';
+}
+
+function setQualityCard(id, value, note, state) {
+  const card = document.getElementById(id + 'Card');
+  if (card) card.className = 'qm state-' + state;
+  setText(id + 'Val', value);
+  setText(id + 'Note', note);
+  setText(id + 'Status', qualityStateLabel(state));
+}
+
+function stateForTrials(trials) {
+  if (trials >= 39 && trials <= 44) return 'good';
+  if (trials >= 36 && trials <= 48) return 'watch';
+  return 'alert';
+}
+
+function stateForInterruptions(interruptions) {
+  if (interruptions === 0) return 'good';
+  if (interruptions === 1) return 'watch';
+  return 'alert';
+}
+
+function stateForNonRetrieval(seconds) {
+  if (seconds <= 3.5) return 'good';
+  if (seconds <= 4.5) return 'watch';
+  return 'alert';
+}
+
+function stateForDuration(seconds) {
+  if (seconds === null) return 'watch';
+  if (seconds >= 450 && seconds <= 540) return 'good';
+  if (seconds >= 390 && seconds <= 600) return 'watch';
+  return 'alert';
+}
+
 function bandName(pct) {
   if(pct>=80) return {name:'Good', bg:'#D6EAD8', fg:'#2A5C2F'};
   if(pct>=60) return {name:'Above average', bg:'#DEE9F5', fg:'#1F4070'};
@@ -355,13 +415,31 @@ function renderQuality() {
     banner.className = 'quality-banner';
     banner.innerHTML = '<div class="icon">&#10003;</div><div class="qb-text"><b>Good quality session.</b> The session was completed without major interruptions and is suitable for trend interpretation.</div>';
   }
-  setText('trialsVal', SESSION.trials);
-  setText('interruptionsVal', SESSION.interruptions);
-  setText('interruptionsNote', SESSION.interruptionNote || (SESSION.interruptions ? 'Interruption detected' : 'No gaps detected'));
-  document.getElementById('nonRetrievalVal').innerHTML = SESSION.nonRetrievalTime.toFixed(1) + '<span style="font-size:13px;font-weight:500;">s</span>';
-  setText('nonRetrievalNote', SESSION.nonRetrievalTime > 3.5 ? 'Slightly elevated (>3.5s)' : 'Within expected range');
-  setText('durationVal', SESSION.duration);
-  setText('durationNote', SESSION.quality === 'caution' ? 'Review quality notes' : 'Completed in full');
+  setQualityCard(
+    'trials',
+    SESSION.trials,
+    'Reference: 39-44 good, around 40 expected',
+    stateForTrials(SESSION.trials)
+  );
+  setQualityCard(
+    'interruptions',
+    SESSION.interruptions,
+    SESSION.interruptionNote || (SESSION.interruptions ? 'Reference: 0 preferred; review gaps' : 'Reference: no gaps detected'),
+    stateForInterruptions(SESSION.interruptions)
+  );
+  setQualityCard(
+    'nonRetrieval',
+    SESSION.nonRetrievalTime.toFixed(1) + 's',
+    'Reference: <=3.5s good, >4.5s review',
+    stateForNonRetrieval(SESSION.nonRetrievalTime)
+  );
+  const durationSeconds = parseDurationToSeconds(SESSION.duration);
+  setQualityCard(
+    'duration',
+    SESSION.duration,
+    'Reference: 7:30-9:00 good',
+    stateForDuration(durationSeconds)
+  );
 }
 
 function redrawCharts() {

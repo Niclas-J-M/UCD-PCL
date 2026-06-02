@@ -75,7 +75,6 @@
   .quality-banner.caution{background:var(--watch-soft);}
   .quality-banner.caution .icon{background:var(--watch);}
   .quality-banner.caution .qb-text b{color:var(--watch);}
-  /* 4-column grid for quality (added non-retrieval time) */
   .quality-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
   .qm{border:1px solid var(--border);border-radius:9px;padding:13px 15px;}
   .qm .qm-label{font-size:11px;color:var(--text-soft);text-transform:uppercase;letter-spacing:.4px;font-weight:600;display:flex;align-items:center;}
@@ -430,48 +429,6 @@ function trendDescription(patient) {
   if (summary.trend === 'declining') return patient.name + "'s SGMA score " + summary.trendSummary + ' Consider follow-up if this pattern continues.';
   if (summary.trend === 'new') return patient.name + "'s SGMA results are still establishing a baseline. More sessions are needed before interpreting a trend.";
   return patient.name + "'s SGMA score " + summary.trendSummary;
-}
-
-function parseDurationToSeconds(duration) {
-  if (!duration || !duration.includes(':')) return null;
-  const parts = duration.split(':').map(Number);
-  if (parts.length !== 2 || parts.some(Number.isNaN)) return null;
-  return parts[0] * 60 + parts[1];
-}
-
-function formatSecondsAsDuration(seconds) {
-  if (seconds === null || Number.isNaN(seconds)) return '-';
-  const rounded = Math.round(seconds);
-  const minutes = Math.floor(rounded / 60);
-  const secs = String(rounded % 60).padStart(2, '0');
-  return minutes + ':' + secs;
-}
-
-function average(values) {
-  const valid = values.filter(value => typeof value === 'number' && !Number.isNaN(value));
-  if (!valid.length) return null;
-  return valid.reduce((sum, value) => sum + value, 0) / valid.length;
-}
-
-function renderQualityHistory() {
-  const sessions = SELECTED_SESSIONS || [];
-  if (!sessions.length) {
-    setText('#avgTrialsVal', '-');
-    setText('#interruptedSessionsVal', '-');
-    setText('#avgNonRetrievalVal', '-');
-    setText('#avgSessionLengthVal', '-');
-    return;
-  }
-
-  const avgTrials = average(sessions.map(session => session.trials));
-  const interrupted = sessions.filter(session => session.interruptions > 0).length;
-  const avgNonRetrieval = average(sessions.map(session => session.nonRetrievalTime));
-  const avgLength = average(sessions.map(session => parseDurationToSeconds(session.duration)));
-
-  setText('#avgTrialsVal', avgTrials === null ? '-' : Math.round(avgTrials));
-  setText('#interruptedSessionsVal', interrupted + ' of ' + sessions.length);
-  setText('#avgNonRetrievalVal', avgNonRetrieval === null ? '-' : avgNonRetrieval.toFixed(1) + 's');
-  setText('#avgSessionLengthVal', formatSecondsAsDuration(avgLength));
 }
 
 function renderProfileShell() {
