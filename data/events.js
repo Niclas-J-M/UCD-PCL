@@ -19,7 +19,7 @@ window.MemoryLabEvents = (() => {
     homeDeadline({ id: 16, patientId: 'pieter-mulder', date: '2026-05-21' }),
     homeDeadline({ id: 17, patientId: 'henk-visser', date: '2026-05-25' }),
     homeDeadline({ id: 18, patientId: 'marieke-smit', date: '2026-05-26' }),
-    homeDeadline({ id: 19, patientId: 'anna-bakker', date: '2026-05-26', note: 'Weekly home task', reminderDaysBefore: 2 }),
+    homeDeadline({ id: 19, patientId: 'anna-bakker', date: '2026-05-26', note: 'Weekly home session', reminderDaysBefore: 2 }),
     homeDeadline({ id: 20, patientId: 'johan-de-vries', date: '2026-05-28' }),
     clinicAppointment({ id: 21, patientId: null, date: '2026-05-18', time: '08:30', endTime: '09:15', title: 'GP staff meeting', note: 'Monthly dept update' }),
     clinicAppointment({ id: 22, patientId: null, date: '2026-05-20', time: '12:00', endTime: '12:45', title: 'Lunch with Dr. Smit' }),

@@ -152,7 +152,7 @@ body{font-family:'Segoe UI','Helvetica Neue',system-ui,sans-serif;background:var
 .ai-time{font-size:11.5px;color:var(--text-faint);white-space:nowrap;margin-top:2px;}
 .ai-badge{font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:4px;margin-top:5px;display:inline-block;}
 
-/* patient detail card (shown in side panel on session click) */
+/* patient detail card (shown for patient-related schedule events) */
 .pd-header{padding:16px 18px;background:linear-gradient(135deg,var(--navy) 0%,var(--navy-soft) 100%);color:#fff;}
 .pd-name{font-size:16px;font-weight:700;margin-bottom:6px;}
 .pd-tags{display:flex;gap:8px;flex-wrap:wrap;}
@@ -211,8 +211,10 @@ body{font-family:'Segoe UI','Helvetica Neue',system-ui,sans-serif;background:var
 .modal-patient-main{flex:1;min-width:0;}
 .modal-patient-name{font-size:13px;font-weight:650;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .modal-patient-meta{font-size:11.5px;color:var(--text-soft);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.modal-patient-check{width:17px;height:17px;border:1.5px solid var(--border);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;background:#fff;flex-shrink:0;}
-.modal-patient-row.selected .modal-patient-check{background:var(--navy);border-color:var(--navy);}
+.modal-patient-radio{width:17px;height:17px;border:1.5px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;background:#fff;flex-shrink:0;transition:border-color .15s,box-shadow .15s;}
+.modal-patient-radio::after{content:'';width:7px;height:7px;border-radius:50%;background:var(--navy);transform:scale(0);transition:transform .15s;}
+.modal-patient-row.selected .modal-patient-radio{border-color:var(--navy);box-shadow:0 0 0 2px #E7ECF4;}
+.modal-patient-row.selected .modal-patient-radio::after{transform:scale(1);}
 .modal-patient-empty{font-size:12.5px;color:var(--text-faint);padding:12px 10px;}
 .form-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
 .modal-foot{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;}
@@ -355,7 +357,7 @@ body{font-family:'Segoe UI','Helvetica Neue',system-ui,sans-serif;background:var
               <div class="modal-patient-search">
                 <input id="mPatientSearch" type="search" placeholder="Search patient..." oninput="updateModalPatientSearch(this.value)">
               </div>
-              <div class="modal-patient-results" id="mPatientResults"></div>
+              <div class="modal-patient-results" id="mPatientResults" role="listbox" aria-label="Select one patient"></div>
             </div>
           </div>
         </div>
@@ -555,7 +557,6 @@ function patientMatchesQuery(patient, query){
     patient.initials,
     edu.label,
     edu.fullLabel,
-    patient.status,
   ].join(' ').toLowerCase().includes(q);
 }
 
@@ -783,20 +784,22 @@ function ensureAgendaPanel(){
 
 function selectEvent(e,d){
   selectedEvt=e;
-  if(isHomeDeadline(e) && patientOf(e)){
-    showPatientPanel(e);
+  if(patientOf(e)){
+    showPatientEventPanel(e);
   } else {
     showClinicEventPanel(e,d);
   }
 }
 
-function showPatientPanel(e){
+function showPatientEventPanel(e){
   const p=patientOf(e);
   const latest=ML.latestSession(p);
   const sp=document.getElementById('sidePanel');
   const recentSess=ML.recentSessions(p,4);
   const sessionCount=ML.sessionsForPatient(p.id).length;
   const edu=ML.educationFor(p.educationCode);
+  const contextLabel=isHomeDeadline(e)?'Session':'Appointment';
+  const contextValue=isHomeDeadline(e)?'#'+e.id:(e.purpose||'Visit');
   sp.innerHTML=`
     <div class="sp-card">
       <div class="pd-header">
@@ -809,8 +812,8 @@ function showPatientPanel(e){
       </div>
       <div class="pd-metrics">
         <div class="pd-metric"><div class="pm-label">SGMA</div><div class="pm-val">${Math.round(ML.sofToSGMA(latest.sof))}</div></div>
-        <div class="pd-metric"><div class="pm-label">SoF</div><div class="pm-val">${latest.sof.toFixed(2)}</div></div>
-        <div class="pd-metric"><div class="pm-label">Task</div><div class="pm-val">#${e.id}</div></div>
+        <div class="pd-metric"><div class="pm-label">Latest session</div><div class="pm-val">${latest.date}</div></div>
+        <div class="pd-metric"><div class="pm-label">${contextLabel}</div><div class="pm-val">${contextValue}</div></div>
       </div>
       <div style="padding:0 18px 12px;font-size:12.5px;color:var(--text-soft);">&#x1F550; ${eventTypeLabel(e)} - ${formatEventTime(e)}${e.note?` &middot; ${e.note}`:''}</div>
       <div class="pd-timeline">
@@ -952,12 +955,12 @@ function renderModalPatientPicker(){
   results.innerHTML=matches.length ? matches.map(p=>{
     const edu=ML.educationFor(p.educationCode);
     const selected=p.id===modalSelectedPatientId;
-    return `<div class="modal-patient-row ${selected?'selected':''}" onclick="selectModalPatient('${p.id}')">
+    return `<div class="modal-patient-row ${selected?'selected':''}" role="option" aria-selected="${selected}" onclick="selectModalPatient('${p.id}')">
       <div class="modal-patient-main">
         <div class="modal-patient-name">${p.name}</div>
-        <div class="modal-patient-meta">${p.initials} &middot; ${edu.label} &middot; ${p.status}</div>
+        <div class="modal-patient-meta">${p.initials} &middot; ${edu.label}</div>
       </div>
-      <div class="modal-patient-check">${selected?'&#10003;':''}</div>
+      <div class="modal-patient-radio" aria-hidden="true"></div>
     </div>`;
   }).join('') : '<div class="modal-patient-empty">No patients found.</div>';
 }

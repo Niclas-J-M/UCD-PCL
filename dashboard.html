@@ -174,6 +174,8 @@
     margin-top: 6px;
   }
   .stat.s-flag .value { color: var(--red); }
+  .stat.s-flag.actionable{cursor:pointer;transition:transform .15s,border-color .15s,box-shadow .15s;}
+  .stat.s-flag.actionable:hover,.stat.s-flag.actionable:focus-visible{transform:translateY(-1px);border-color:#D8A2AA;box-shadow:0 5px 16px rgba(190,10,30,.12);outline:none;}
 
   /* ─── Main grid layout ───────────────────────────────────── */
   .main-grid {
@@ -202,28 +204,19 @@
     font-weight: 700;
     color: var(--navy);
   }
-  .filters {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-  .filter-chip {
-    font-size: 12px;
-    padding: 5px 11px;
-    border-radius: 6px;
-    border: 1px solid var(--border);
-    background: #fff;
-    color: var(--text-soft);
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-  .filter-chip:hover { border-color: var(--text-faint); }
-  .filter-chip.active {
-    background: var(--navy);
-    color: #fff;
-    border-color: var(--navy);
-    font-weight: 600;
-  }
+  .filter-dropdown{position:relative;flex-shrink:0;}
+  .filter-button{min-width:174px;display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--navy);border:1px solid var(--navy);color:#fff;border-radius:7px;padding:9px 12px;font-size:12.5px;font-weight:700;cursor:pointer;transition:background .15s,border-color .15s,box-shadow .15s;}
+  .filter-button:hover,.filter-button:focus-visible,.filter-dropdown.open .filter-button{background:var(--navy-soft);border-color:var(--navy-soft);box-shadow:0 0 0 3px rgba(26,35,64,.16);outline:none;}
+  .filter-caret{font-size:10px;color:#fff;transition:transform .15s;}
+  .filter-dropdown.open .filter-caret{transform:rotate(180deg);}
+  .filter-menu{display:none;position:absolute;z-index:40;top:calc(100% + 6px);right:0;min-width:210px;background:#fff;border:1px solid var(--border);border-radius:8px;padding:5px;box-shadow:0 10px 28px rgba(26,35,64,.16);}
+  .filter-dropdown.open .filter-menu{display:block;}
+  .filter-option{width:100%;border:0;background:transparent;color:var(--text);border-radius:6px;padding:9px 10px;display:flex;align-items:center;justify-content:space-between;gap:16px;font:inherit;font-size:12.5px;font-weight:600;text-align:left;cursor:pointer;}
+  .filter-option:hover,.filter-option:focus-visible{background:var(--bg);outline:none;}
+  .filter-option.active{background:#EEF1F6;color:var(--navy);}
+  .filter-check{width:14px;color:var(--navy);font-weight:800;text-align:center;}
+  .main-grid > .panel > .panel-head{gap:12px;flex-wrap:wrap;}
+  .main-grid > .panel > .panel-head .filter-dropdown{margin-left:auto;}
   .patients-heading {
     display: flex;
     align-items: baseline;
@@ -524,6 +517,11 @@
     width: 4px; height: 14px; border-radius: 2px; background: var(--navy);
   }
   .legend .mk.el { background: var(--red); }
+  @media (max-width:700px) {
+    .main-grid > .panel > .panel-head .filter-dropdown{width:100%;margin-left:0;}
+    .main-grid > .panel > .panel-head .filter-button{width:100%;}
+    .main-grid > .panel > .panel-head .filter-menu{left:0;right:0;min-width:0;}
+  }
 </style>
 </head>
 <body>
@@ -575,7 +573,7 @@
       <div class="value">--</div>
       <div class="sub">Sessions ready to review</div>
     </div>
-    <div class="stat s-flag">
+    <div class="stat s-flag actionable" id="reviewSummaryShortcut" role="button" tabindex="0" aria-label="Show patients needing review">
       <div class="label">Flagged for review</div>
       <div class="value">--</div>
       <div class="sub">Declining trend or low session quality</div>
@@ -592,10 +590,15 @@
           <h2 class="patients-title" onclick="window.location.href='patients.html'" role="link" tabindex="0" onkeydown="if(event.key==='Enter') window.location.href='patients.html'" style="cursor:pointer;">My patients</h2>
           <div class="patient-count" id="patientGridCount"></div>
         </div>
-        <div class="filters">
-          <div class="filter-chip active" data-filter="all">All</div>
-          <div class="filter-chip" data-filter="review">Needs review</div>
-          <div class="filter-chip" data-filter="new-session">New session</div>
+        <div class="filter-dropdown" id="dashboardPatientFilter">
+          <button class="filter-button" id="dashboardFilterButton" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="dashboardFilterMenu">
+            <span id="dashboardFilterLabel">Filter: All</span><span class="filter-caret" aria-hidden="true">&#9660;</span>
+          </button>
+          <div class="filter-menu" id="dashboardFilterMenu" role="listbox" aria-label="Filter dashboard patients">
+            <button class="filter-option active" type="button" role="option" aria-selected="true" data-filter="all"><span>All</span><span class="filter-check">&#10003;</span></button>
+            <button class="filter-option" type="button" role="option" aria-selected="false" data-filter="review"><span>Needs review</span><span class="filter-check"></span></button>
+            <button class="filter-option" type="button" role="option" aria-selected="false" data-filter="new-session"><span>New session</span><span class="filter-check"></span></button>
+          </div>
         </div>
       </div>
 
@@ -675,21 +678,34 @@ function renderDashboardSummary() {
   if (stats[2]) stats[2].querySelector('.value').textContent = ML.patients.filter(patient => ML.patientClinicalSummary(patient.id).needsReview).length;
 }
 
+function dashboardPatientPriority(patient) {
+  const summary = ML.patientClinicalSummary(patient.id);
+  if (summary.needsReview && summary.newSession) return 0;
+  if (summary.needsReview) return 1;
+  if (summary.newSession) return 2;
+  return 3;
+}
+
+function sortDashboardPatients(patients) {
+  return patients.slice().sort((a, b) => {
+    return dashboardPatientPriority(a) - dashboardPatientPriority(b)
+      || a.name.localeCompare(b.name, 'en', { sensitivity: 'base' });
+  });
+}
+
 function renderPatientGrid() {
   const grid = document.querySelector('.patient-grid');
   if (!grid) return;
 
-  const matchingPatients = ML.patients.filter(patient => {
+  const matchingPatients = sortDashboardPatients(ML.patients.filter(patient => {
     const summary = ML.patientClinicalSummary(patient.id);
     if (activePatientFilter === 'review') return summary.needsReview;
     if (activePatientFilter === 'new-session') return summary.newSession;
     return true;
-  });
+  }));
   const visiblePatients = matchingPatients.slice(0, DASHBOARD_PATIENT_LIMIT);
 
-  document.querySelectorAll('.filters .filter-chip').forEach(chip => {
-    chip.classList.toggle('active', chip.dataset.filter === activePatientFilter);
-  });
+  updatePatientFilterDropdown();
 
   if (!visiblePatients.length) {
     grid.innerHTML = '<div class="patients-empty" style="grid-column:1/-1;">No patients match this dashboard filter.</div>';
@@ -747,11 +763,61 @@ function updatePatientGridCount(visibleCount, totalCount) {
 }
 
 function setupPatientFilters() {
-  document.querySelectorAll('.filters .filter-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      activePatientFilter = chip.dataset.filter || 'all';
-      renderPatientGrid();
+  const dropdown = document.getElementById('dashboardPatientFilter');
+  const button = document.getElementById('dashboardFilterButton');
+  if (!dropdown || !button) return;
+  button.addEventListener('click', event => {
+    event.stopPropagation();
+    setPatientFilterOpen(!dropdown.classList.contains('open'));
+  });
+  dropdown.querySelectorAll('.filter-option').forEach(option => {
+    option.addEventListener('click', () => {
+      setDashboardPatientFilter(option.dataset.filter);
     });
+  });
+  document.addEventListener('click', event => {
+    if (!dropdown.contains(event.target)) setPatientFilterOpen(false);
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') setPatientFilterOpen(false);
+  });
+  const reviewShortcut = document.getElementById('reviewSummaryShortcut');
+  if (reviewShortcut) {
+    reviewShortcut.addEventListener('click', () => setDashboardPatientFilter('review', true));
+    reviewShortcut.addEventListener('keydown', event => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      setDashboardPatientFilter('review', true);
+    });
+  }
+}
+
+function setDashboardPatientFilter(filter, focusPatients = false) {
+  activePatientFilter = ['review', 'new-session'].includes(filter) ? filter : 'all';
+  setPatientFilterOpen(false);
+  renderPatientGrid();
+  if (focusPatients) {
+    document.querySelector('.main-grid > .panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+function setPatientFilterOpen(open) {
+  const dropdown = document.getElementById('dashboardPatientFilter');
+  const button = document.getElementById('dashboardFilterButton');
+  if (!dropdown || !button) return;
+  dropdown.classList.toggle('open', open);
+  button.setAttribute('aria-expanded', String(open));
+}
+
+function updatePatientFilterDropdown() {
+  const labels = { all: 'All', review: 'Needs review', 'new-session': 'New session' };
+  const label = document.getElementById('dashboardFilterLabel');
+  if (label) label.textContent = 'Filter: ' + labels[activePatientFilter];
+  document.querySelectorAll('#dashboardPatientFilter .filter-option').forEach(option => {
+    const active = option.dataset.filter === activePatientFilter;
+    option.classList.toggle('active', active);
+    option.setAttribute('aria-selected', String(active));
+    option.querySelector('.filter-check').innerHTML = active ? '&#10003;' : '';
   });
 }
 

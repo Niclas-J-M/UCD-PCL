@@ -306,7 +306,7 @@ window.MemoryLabData = (() => {
     { id: 16, type: 'home_deadline', patientId: 'pieter-mulder', title: 'At-home SGMA deadline', date: new Date(2026, 4, 21), status: 'scheduled', note: '', reminderDaysBefore: 1 },
     { id: 17, type: 'home_deadline', patientId: 'henk-visser', title: 'At-home SGMA deadline', date: new Date(2026, 4, 25), status: 'scheduled', note: '', reminderDaysBefore: 1 },
     { id: 18, type: 'home_deadline', patientId: 'marieke-smit', title: 'At-home SGMA deadline', date: new Date(2026, 4, 26), status: 'scheduled', note: '', reminderDaysBefore: 1 },
-    { id: 19, type: 'home_deadline', patientId: 'anna-bakker', title: 'At-home SGMA deadline', date: new Date(2026, 4, 26), time: '11:00', status: 'scheduled', note: 'Weekly home task', reminderDaysBefore: 2 },
+    { id: 19, type: 'home_deadline', patientId: 'anna-bakker', title: 'At-home SGMA deadline', date: new Date(2026, 4, 26), time: '11:00', status: 'scheduled', note: 'Weekly home session', reminderDaysBefore: 2 },
     { id: 20, type: 'home_deadline', patientId: 'johan-de-vries', title: 'At-home SGMA deadline', date: new Date(2026, 4, 28), status: 'scheduled', note: '', reminderDaysBefore: 1 },
     { id: 21, type: 'clinic_appointment', patientId: null, date: new Date(2026, 4, 18), time: '08:30', endTime: '09:15', title: 'GP staff meeting', purpose: 'Consultation', status: 'scheduled', note: 'Monthly dept update' },
     { id: 22, type: 'clinic_appointment', patientId: null, date: new Date(2026, 4, 20), time: '12:00', endTime: '12:45', title: 'Lunch with Dr. Smit', purpose: 'Consultation', status: 'scheduled', note: '' },

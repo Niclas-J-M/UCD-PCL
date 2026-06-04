@@ -42,10 +42,17 @@
   .search input{width:100%;height:38px;border:1px solid var(--border);border-radius:7px;background:#fff;padding:0 13px 0 36px;font-size:13.5px;color:var(--text);outline:none;}
   .search input:focus{border-color:#B8C0D0;box-shadow:0 0 0 3px rgba(74,111,165,.10);}
   .search .icon{position:absolute;left:13px;top:9px;color:var(--text-faint);font-size:13px;}
-  .filters{display:flex;gap:8px;flex-wrap:wrap;}
-  .filter-chip{font-size:12.5px;font-weight:600;padding:7px 11px;border:1px solid var(--border);border-radius:7px;color:var(--text-soft);background:#fff;cursor:pointer;transition:all .15s;user-select:none;}
-  .filter-chip:hover{color:var(--navy);border-color:#C9CED8;}
-  .filter-chip.active{background:var(--navy);border-color:var(--navy);color:#fff;}
+  .filter-dropdown{position:relative;flex-shrink:0;}
+  .filter-button{min-width:190px;height:38px;display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--navy);border:1px solid var(--navy);color:#fff;border-radius:7px;padding:0 12px;font-size:13px;font-weight:700;cursor:pointer;transition:background .15s,border-color .15s,box-shadow .15s;}
+  .filter-button:hover,.filter-button:focus-visible,.filter-dropdown.open .filter-button{background:var(--navy-soft);border-color:var(--navy-soft);box-shadow:0 0 0 3px rgba(26,35,64,.16);outline:none;}
+  .filter-caret{font-size:10px;color:#fff;transition:transform .15s;}
+  .filter-dropdown.open .filter-caret{transform:rotate(180deg);}
+  .filter-menu{display:none;position:absolute;z-index:40;top:calc(100% + 6px);right:0;min-width:220px;background:#fff;border:1px solid var(--border);border-radius:8px;padding:5px;box-shadow:0 10px 28px rgba(26,35,64,.16);}
+  .filter-dropdown.open .filter-menu{display:block;}
+  .filter-option{width:100%;border:0;background:transparent;color:var(--text);border-radius:6px;padding:9px 10px;display:flex;align-items:center;justify-content:space-between;gap:16px;font:inherit;font-size:12.5px;font-weight:600;text-align:left;cursor:pointer;}
+  .filter-option:hover,.filter-option:focus-visible{background:var(--bg);outline:none;}
+  .filter-option.active{background:#EEF1F6;color:var(--navy);}
+  .filter-check{width:14px;color:var(--navy);font-weight:800;text-align:center;}
   table{width:100%;border-collapse:collapse;}
   th{height:38px;background:#FAFAFB;border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:.45px;color:var(--text-soft);text-align:left;font-weight:700;padding:0 16px;}
   td{border-bottom:1px solid var(--border);padding:13px 16px;vertical-align:middle;}
@@ -80,6 +87,8 @@
     .page-head{align-items:flex-start;flex-direction:column;gap:6px;}
     .toolbar{align-items:stretch;flex-direction:column;}
     .search{min-width:0;}
+    .filter-button{width:100%;}
+    .filter-menu{left:0;right:0;min-width:0;}
     table,thead,tbody,tr,th,td{display:block;}
     thead{display:none;}
     tr.patient-row{padding:12px 14px;border-bottom:1px solid var(--border);}
@@ -117,14 +126,17 @@
     <div class="toolbar">
       <div class="search">
         <span class="icon">&#8981;</span>
-        <input id="patientSearch" type="search" placeholder="Search by name, initials, education, or status">
+        <input id="patientSearch" type="search" placeholder="Search by name or flags">
       </div>
-      <div class="filters" id="filterChips">
-        <div class="filter-chip active" data-filter="all">All</div>
-        <div class="filter-chip" data-filter="review">Needs review</div>
-        <div class="filter-chip" data-filter="new-session">New session</div>
-        <div class="filter-chip" data-filter="stable">Stable</div>
-        <div class="filter-chip" data-filter="new">New</div>
+      <div class="filter-dropdown" id="patientFilter">
+          <button class="filter-button" id="patientFilterButton" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="patientFilterMenu">
+          <span id="patientFilterLabel">Filter: All</span><span class="filter-caret" aria-hidden="true">&#9660;</span>
+        </button>
+        <div class="filter-menu" id="patientFilterMenu" role="listbox" aria-label="Filter patients">
+          <button class="filter-option active" type="button" role="option" aria-selected="true" data-filter="all"><span>All</span><span class="filter-check">&#10003;</span></button>
+          <button class="filter-option" type="button" role="option" aria-selected="false" data-filter="review"><span>Needs review</span><span class="filter-check"></span></button>
+          <button class="filter-option" type="button" role="option" aria-selected="false" data-filter="new-session"><span>New session</span><span class="filter-check"></span></button>
+        </div>
       </div>
     </div>
 
@@ -176,8 +188,6 @@ function matchesFilter(patient) {
   const summary = ML.patientClinicalSummary(patient.id);
   if (activeFilter === 'review') return summary.needsReview;
   if (activeFilter === 'new-session') return summary.newSession;
-  if (activeFilter === 'stable') return summary.trend === 'stable';
-  if (activeFilter === 'new') return summary.trend === 'new';
   return true;
 }
 
@@ -189,7 +199,6 @@ function matchesSearch(patient) {
     patient.initials,
     edu.label,
     edu.fullLabel,
-    patient.status,
     ML.patientClinicalSummary(patient.id).trend,
     searchableLabels(patient),
   ].join(' ').toLowerCase();
@@ -214,7 +223,7 @@ function renderPatients() {
             <div class="patient-initials">${patient.initials}</div>
             <div>
               <div class="p-name">${patient.name}</div>
-              <div class="p-meta">${patient.age} yrs &middot; ${edu.fullLabel} &middot; ${patient.status}</div>
+              <div class="p-meta">${patient.age} yrs &middot; ${edu.fullLabel}</div>
             </div>
           </div>
         </td>
@@ -223,7 +232,7 @@ function renderPatients() {
           <div class="score-sub">Latest: ${latest.date}</div>
         </td>
         <td>${trendLabel(patient)}</td>
-        <td><div class="badges">${UI.patientBadgesHtml(ML.patientClinicalSummary(patient.id).badges, { emptyLabel: 'No active flags' })}</div></td>
+        <td><div class="badges">${UI.patientBadgesHtml(ML.patientClinicalSummary(patient.id).badges.map(badge => ['review', 'new-session'].includes(badge.filter) ? badge : { ...badge, filter: null }), { emptyLabel: 'No active flags' })}</div></td>
         <td>
           <div class="actions" onclick="event.stopPropagation()">
             <button class="btn-sm primary" onclick="window.location.href='${UI.patientProfileUrl(patient)}'">Open profile</button>
@@ -238,11 +247,29 @@ function renderPatients() {
 }
 
 function setActiveFilter(filter) {
-  activeFilter = filter || 'all';
-  document.querySelectorAll('.filter-chip').forEach(item => {
-    item.classList.toggle('active', item.dataset.filter === activeFilter);
-  });
+  activeFilter = ['review', 'new-session'].includes(filter) ? filter : 'all';
+  updateFilterDropdown();
+  setFilterOpen(false);
   renderPatients();
+}
+
+function setFilterOpen(open) {
+  const dropdown = document.getElementById('patientFilter');
+  const button = document.getElementById('patientFilterButton');
+  if (!dropdown || !button) return;
+  dropdown.classList.toggle('open', open);
+  button.setAttribute('aria-expanded', String(open));
+}
+
+function updateFilterDropdown() {
+  const labels = { all: 'All', review: 'Needs review', 'new-session': 'New session' };
+  document.getElementById('patientFilterLabel').textContent = 'Filter: ' + labels[activeFilter];
+  document.querySelectorAll('#patientFilter .filter-option').forEach(option => {
+    const active = option.dataset.filter === activeFilter;
+    option.classList.toggle('active', active);
+    option.setAttribute('aria-selected', String(active));
+    option.querySelector('.filter-check').innerHTML = active ? '&#10003;' : '';
+  });
 }
 
 document.getElementById('patientSearch').addEventListener('input', event => {
@@ -250,10 +277,24 @@ document.getElementById('patientSearch').addEventListener('input', event => {
   renderPatients();
 });
 
-document.getElementById('filterChips').addEventListener('click', event => {
-  const chip = event.target.closest('.filter-chip');
-  if (!chip) return;
-  setActiveFilter(chip.dataset.filter);
+document.getElementById('patientFilterButton').addEventListener('click', event => {
+  event.stopPropagation();
+  const dropdown = document.getElementById('patientFilter');
+  setFilterOpen(!dropdown.classList.contains('open'));
+});
+
+document.getElementById('patientFilter').addEventListener('click', event => {
+  const option = event.target.closest('.filter-option');
+  if (!option) return;
+  setActiveFilter(option.dataset.filter);
+});
+
+document.addEventListener('click', event => {
+  if (!event.target.closest('#patientFilter')) setFilterOpen(false);
+});
+
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape') setFilterOpen(false);
 });
 
 document.getElementById('patientsTable').addEventListener('click', event => {

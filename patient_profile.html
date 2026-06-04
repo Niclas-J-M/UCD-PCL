@@ -37,11 +37,11 @@
 
   /* page */
   .page{max-width:1180px;margin:0 auto;padding:22px 28px 40px;}
-  .breadcrumb{font-size:12.5px;color:var(--text-soft);margin-bottom:16px;}
-  .breadcrumb a{color:var(--text-soft);text-decoration:none;}
-  .breadcrumb a:hover{color:var(--navy);}
-  .breadcrumb .sep{margin:0 7px;color:var(--text-faint);}
-  .breadcrumb .current{color:var(--navy);font-weight:600;}
+  .breadcrumb{display:flex;align-items:center;flex-wrap:wrap;gap:6px;font-size:12.5px;color:var(--text-soft);margin-bottom:16px;line-height:1.5;}
+  .breadcrumb a{color:var(--text-soft);text-decoration:none;border-radius:4px;}
+  .breadcrumb a:hover,.breadcrumb a:focus-visible{color:var(--navy);text-decoration:underline;text-underline-offset:3px;outline:none;}
+  .breadcrumb .sep{color:var(--text-faint);user-select:none;}
+  .breadcrumb .current{color:var(--navy);font-weight:600;min-width:0;}
 
   /* patient header */
   .patient-header{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:22px 26px;box-shadow:var(--shadow);display:flex;align-items:center;gap:22px;margin-bottom:22px;}
@@ -181,8 +181,17 @@
   .pq-date{font-size:11px;color:var(--text-faint);margin-top:3px;}
   .hist-head,.hist-item{display:grid;grid-template-columns:1.15fr .95fr .85fr .85fr;align-items:center;gap:14px;padding:11px 20px;border-bottom:1px solid #EEF0F3;font-size:12.5px;}
   .hist-head{background:#FAFAFB;color:var(--text-faint);font-size:11px;text-transform:uppercase;letter-spacing:.45px;font-weight:700;}
-  .hist-sort{border:0;background:transparent;color:inherit;font:inherit;font-weight:700;text-transform:inherit;letter-spacing:inherit;text-align:left;padding:0;cursor:pointer;}
-  .hist-sort:hover,.hist-sort.active{color:var(--navy);}
+  .hist-sort{border:0;background:transparent;color:inherit;font:inherit;font-weight:700;text-transform:inherit;letter-spacing:inherit;text-align:left;padding:5px 6px;margin:-5px -6px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;min-width:0;transition:background .15s,color .15s;}
+  .hist-sort:hover{background:#EEF1F5;color:var(--navy);}
+  .hist-sort.active{color:var(--navy);}
+  .sort-chevrons{width:9px;height:14px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;line-height:6px;flex-shrink:0;}
+  .sort-chevron{font-size:8px;color:#C4C9D2;transition:color .15s,transform .15s;}
+  .hist-sort.active[data-sort-dir="asc"] .sort-chevron.down,.hist-sort.active[data-sort-dir="desc"] .sort-chevron.up{color:var(--navy);transform:scale(1.2);}
+  .quality-sort-dots{display:inline-flex;align-items:center;gap:3px;height:14px;flex-shrink:0;}
+  .quality-sort-dot{width:7px;height:7px;border-radius:50%;opacity:.28;transition:opacity .15s,transform .15s,box-shadow .15s;}
+  .quality-sort-dot.caution{background:var(--watch);}
+  .quality-sort-dot.good{background:var(--good);}
+  .hist-sort.active[data-sort-dir="caution"] .quality-sort-dot.caution,.hist-sort.active[data-sort-dir="good"] .quality-sort-dot.good{opacity:1;transform:scale(1.25);box-shadow:0 0 0 2px #fff,0 0 0 3px currentColor;}
   .hist-item{cursor:pointer;transition:background .15s,transform .15s;}
   .hist-item:hover{background:#FAFAFB;}
   .hist-item:last-child{border-bottom:none;}
@@ -225,11 +234,11 @@
 </div>
 
 <div class="page">
-  <div class="breadcrumb">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
     <a href="dashboard.html">Dashboard</a><span class="sep">&rsaquo;</span>
     <a href="patients.html">Patients</a><span class="sep">&rsaquo;</span>
-    <span class="current">Loading patient</span>
-  </div>
+    <span class="current" aria-current="page">Loading patient</span>
+  </nav>
 
   <div class="patient-header">
     <div class="patient-avatar">--</div>
@@ -271,10 +280,18 @@
           <span class="subtitle">Newest first</span>
         </div>
         <div class="hist-head">
-          <button class="hist-sort" type="button" data-sort="session">Session</button>
-          <button class="hist-sort active" type="button" data-sort="date">Date</button>
-          <button class="hist-sort" type="button" data-sort="sgma">SGMA</button>
-          <button class="hist-sort" type="button" data-sort="quality">Quality</button>
+          <button class="hist-sort" type="button" data-sort="session">
+            <span>Session</span><span class="sort-chevrons" aria-hidden="true"><span class="sort-chevron up">&#9650;</span><span class="sort-chevron down">&#9660;</span></span>
+          </button>
+          <button class="hist-sort active" type="button" data-sort="date">
+            <span>Date</span><span class="sort-chevrons" aria-hidden="true"><span class="sort-chevron up">&#9650;</span><span class="sort-chevron down">&#9660;</span></span>
+          </button>
+          <button class="hist-sort" type="button" data-sort="sgma">
+            <span>SGMA</span><span class="sort-chevrons" aria-hidden="true"><span class="sort-chevron up">&#9650;</span><span class="sort-chevron down">&#9660;</span></span>
+          </button>
+          <button class="hist-sort" type="button" data-sort="quality">
+            <span>Quality</span><span class="quality-sort-dots" aria-hidden="true"><span class="quality-sort-dot caution"></span><span class="quality-sort-dot good"></span></span>
+          </button>
         </div>
         <div class="hist-list">
           <div class="patients-empty">Loading sessions...</div>
@@ -451,7 +468,6 @@ function renderProfileShell() {
   setHtml('.ph-tags', `
     <span class="ph-tag"><b>${SELECTED_PATIENT.age}</b> years</span>
     <span class="ph-tag">Education: <b>${edu.fullLabel}</b></span>
-    <span class="ph-tag">Status: <b>${SELECTED_PATIENT.status}</b></span>
     <span class="ph-tag"><b>${SELECTED_SESSIONS.length}</b> sessions completed</span>
     <span class="ph-tag">Patient since <b>${SELECTED_PATIENT.patientSince}</b></span>
   `);
@@ -463,7 +479,7 @@ function renderProfileShell() {
 
   setText('.col-main .panel:first-child .subtitle', SELECTED_SESSIONS.length + ' sessions · ' + SELECTED_SESSIONS[0].label.split(' ')[0] + '–' + latest.label.split(' ')[0] + ' 2026');
   setHtml('.traj-legend', `
-    <div class="item"><span class="ln good"></span>${SELECTED_PATIENT.name.split(' ')[0]}'s SGMA score over time</div>
+    <div class="item"><span class="ln good"></span>SGMA score over time</div>
     <div class="item"><span class="mk good"></span>Good quality</div>
     <div class="item"><span class="mk caution"></span>Caution session</div>
     <div class="item" id="trendFilterNote">Click a session point for details</div>
@@ -509,7 +525,10 @@ function setNoteEditorOpen(open) {
   const editor = document.getElementById('noteEditor');
   const toggle = document.getElementById('toggleNoteEditorBtn');
   if (editor) editor.classList.toggle('hidden', !open);
-  if (toggle) toggle.textContent = open ? 'Close note editor' : 'Add note for this visit';
+  if (toggle) {
+    toggle.textContent = 'Add note for this visit';
+    toggle.closest('.panel-foot').hidden = open;
+  }
   if (open) setNoteMessage('');
   if (!open) {
     const text = document.getElementById('noteText');
@@ -546,7 +565,7 @@ function setupConsultationNoteEditor() {
   const cancel = document.getElementById('cancelNoteBtn');
   if (toggle) toggle.onclick = () => {
     clearNoteFeedbackTimer();
-    setNoteEditorOpen(!noteEditorOpen);
+    setNoteEditorOpen(true);
   };
   if (save) save.onclick = saveConsultationNote;
   if (cancel) cancel.onclick = () => {
@@ -594,6 +613,19 @@ function recentSortLabel() {
   return 'Newest first';
 }
 
+function updateRecentSortHeaders() {
+  const activeLabel = recentSortLabel();
+  document.querySelectorAll('#recentSessionsPanel .hist-sort').forEach(button => {
+    const isActive = button.dataset.sort === recentSort.key;
+    button.classList.toggle('active', isActive);
+    button.dataset.sortDir = isActive ? recentSort.dir : '';
+    button.setAttribute('aria-sort', isActive
+      ? (recentSort.dir === 'asc' || recentSort.dir === 'good' ? 'ascending' : 'descending')
+      : 'none');
+    button.title = isActive ? 'Sorted ' + activeLabel.toLowerCase() + '. Click to reverse.' : 'Click to sort by ' + button.dataset.sort + '.';
+  });
+}
+
 function sortRecentSessions(items) {
   return items.slice().sort((a, b) => {
     let result = 0;
@@ -627,9 +659,7 @@ function renderRecentSessions() {
   const sessions = showAllSessions ? sortedSessions : sortedSessions.slice(0, 4);
   const subtitle = document.querySelector('#recentSessionsPanel .panel-head .subtitle');
   if (subtitle) subtitle.textContent = recentSortLabel();
-  document.querySelectorAll('#recentSessionsPanel .hist-sort').forEach(button => {
-    button.classList.toggle('active', button.dataset.sort === recentSort.key);
-  });
+  updateRecentSortHeaders();
   panel.classList.toggle('expanded', showAllSessions);
   panel.innerHTML = sessions.map(({ session, index }) => `
     <div class="hist-item" role="link" tabindex="0" data-session-index="${index}" aria-label="Open session ${index + 1}">
