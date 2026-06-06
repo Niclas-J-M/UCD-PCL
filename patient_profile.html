@@ -56,6 +56,8 @@
   .btn-primary:hover{background:#A50918;}
   .btn-outline{background:#fff;color:var(--navy);border:1px solid var(--border);padding:10px 18px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;}
   .btn-outline:hover{background:var(--bg);border-color:var(--text-faint);}
+  .schedule-message{display:none;margin-top:12px;padding:9px 11px;border-radius:8px;background:var(--good-soft);border:1px solid #CFE3DC;color:var(--good);font-size:12.5px;font-weight:700;}
+  .schedule-message.show{display:block;}
 
   /* layout */
   .body-grid{display:grid;grid-template-columns:1fr 340px;gap:22px;align-items:start;}
@@ -206,15 +208,47 @@
   .panel-foot{padding:12px 20px;border-top:1px solid var(--border);}
   .btn-ghost{width:100%;background:#fff;border:1px solid var(--border);color:var(--navy);padding:8px;border-radius:7px;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s;}
   .btn-ghost:hover{background:var(--bg);border-color:var(--text-faint);}
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(26,35,64,.45);z-index:500;align-items:center;justify-content:center;padding:18px;}
+  .modal-overlay.open{display:flex;}
+  .schedule-modal{background:var(--card);border-radius:14px;width:min(500px,100%);max-height:calc(100vh - 36px);box-shadow:0 18px 44px rgba(26,35,64,.22);overflow:auto;}
+  .modal-head{padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:16px;}
+  .modal-head h2{font-size:16px;font-weight:700;color:var(--navy);}
+  .modal-close{width:28px;height:28px;border-radius:7px;border:1px solid var(--border);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--text-soft);transition:all .15s;flex-shrink:0;}
+  .modal-close:hover{background:var(--bg);}
+  .modal-body{padding:20px 24px;}
+  .type-tabs{display:flex;gap:10px;margin-bottom:20px;}
+  .type-tab{flex:1;padding:11px;border:1.5px solid var(--border);border-radius:9px;text-align:center;cursor:pointer;transition:all .15s;background:#fff;}
+  .type-tab .tt-icon{font-size:20px;margin-bottom:5px;}
+  .type-tab .tt-label{font-size:12.5px;font-weight:600;color:var(--text-soft);}
+  .type-tab.active{border-color:var(--navy);background:#F0F3F8;}
+  .type-tab.active .tt-label{color:var(--navy);}
+  .form-field{margin-bottom:16px;}
+  .form-field label{display:block;font-size:12px;font-weight:600;color:var(--text-soft);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;}
+  .form-field select,.form-field input,.form-field textarea{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;color:var(--text);outline:none;transition:border .15s;background:#fff;}
+  .form-field select:focus,.form-field input:focus,.form-field textarea:focus{border-color:var(--navy);}
+  .fixed-patient{border:1px solid var(--border);border-radius:8px;background:#FAFAFB;padding:10px 12px;}
+  .fixed-patient-name{font-weight:700;color:var(--navy);font-size:13px;}
+  .fixed-patient-meta{font-size:11.5px;color:var(--text-soft);margin-top:1px;}
+  .form-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+  .modal-foot{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;}
+  .btn-cancel{background:#fff;border:1px solid var(--border);color:var(--text-soft);padding:9px 18px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;}
+  .btn-cancel:hover{background:var(--bg);}
+  .btn-save{background:var(--navy);color:#fff;border:none;padding:9px 22px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s;}
+  .btn-save:hover{background:var(--navy-soft);}
   @media (max-width: 900px) {
     .body-grid{grid-template-columns:1fr;}
     .trend-controls{width:100%;margin-left:0;}
     .trend-filter{flex:1;}
+    .patient-header{align-items:flex-start;flex-wrap:wrap;}
+    .ph-actions{width:100%;flex-wrap:wrap;}
   }
   @media (max-width: 560px) {
     .hist-head,.hist-item{grid-template-columns:1.15fr .8fr .8fr .8fr;gap:8px;padding:11px 16px;}
     .hist-head{font-size:10px;}
     .hist-session,.hist-date,.hist-sgma,.hist-q{justify-self:start;}
+    .type-tabs,.form-row{grid-template-columns:1fr;display:grid;}
+    .modal-foot{flex-direction:column-reverse;}
+    .btn-cancel,.btn-save{width:100%;}
   }
 </style>
 </head>
@@ -245,9 +279,10 @@
     <div class="ph-main">
       <h1>Loading patient</h1>
       <div class="ph-tags"></div>
+      <div class="schedule-message" id="scheduleMessage"></div>
     </div>
     <div class="ph-actions">
-      <button class="btn-outline" onclick="window.location.href='schedule.html'">Schedule session</button>
+      <button class="btn-outline" type="button">Schedule session</button>
       <button class="btn-primary" onclick="window.location.href='patients_view.html'">Show to patient</button>
     </div>
   </div>
@@ -341,6 +376,103 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="profileScheduleOverlay" onclick="closeProfileScheduleOutside(event)">
+  <div class="schedule-modal" role="dialog" aria-modal="true" aria-labelledby="profileScheduleTitle">
+    <div class="modal-head">
+      <h2 id="profileScheduleTitle">Add event</h2>
+      <button class="modal-close" type="button" onclick="closeProfileScheduleModal()" aria-label="Close schedule modal">&#215;</button>
+    </div>
+    <div class="modal-body">
+      <div class="type-tabs">
+        <button class="type-tab active" id="profileDeadlineTab" type="button" onclick="setProfileScheduleType('deadline')">
+          <div class="tt-icon">&#x1F4CB;</div>
+          <div class="tt-label">At-home deadline</div>
+        </button>
+        <button class="type-tab" id="profileAppointmentTab" type="button" onclick="setProfileScheduleType('appointment')">
+          <div class="tt-icon">&#x1F4C5;</div>
+          <div class="tt-label">In-person appointment</div>
+        </button>
+      </div>
+      <div class="form-field">
+        <label>Patient</label>
+        <div class="fixed-patient">
+          <div class="fixed-patient-name" id="profileSchedulePatient">Loading patient</div>
+          <div class="fixed-patient-meta">Current patient profile</div>
+        </div>
+      </div>
+      <div id="profileDeadlineFields">
+        <div class="form-row">
+          <div class="form-field">
+            <label for="profileRepeat">Repeat</label>
+            <select id="profileRepeat" onchange="updateProfileRepeatFields()">
+              <option value="never">Never</option>
+              <option value="daily">Every day</option>
+              <option value="weekly">Every week</option>
+              <option value="biweekly">Every 2 weeks</option>
+              <option value="monthly">Every month</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="profileRepeatEndMode">End repeat</label>
+            <select id="profileRepeatEndMode" onchange="updateProfileRepeatFields()">
+              <option value="never">Never</option>
+              <option value="date">On date</option>
+            </select>
+          </div>
+          <div class="form-field" id="profileRepeatEndDateField" style="display:none;">
+            <label for="profileRepeatEndDate">End date</label>
+            <input type="date" id="profileRepeatEndDate">
+          </div>
+        </div>
+        <div class="form-field">
+          <label for="profileReminder">Reminder</label>
+          <select id="profileReminder">
+            <option value="0">No reminder</option>
+            <option value="5">5 minutes before</option>
+            <option value="30">30 minutes before</option>
+            <option value="60">1 hour before</option>
+            <option value="1440" selected>1 day before</option>
+            <option value="2880">2 days before</option>
+            <option value="10080">1 week before</option>
+          </select>
+        </div>
+      </div>
+      <div id="profileAppointmentFields" style="display:none;">
+        <div class="form-field">
+          <label for="profilePurpose">Purpose</label>
+          <select id="profilePurpose">
+            <option>Assessment</option>
+            <option>Results discussion</option>
+            <option>Consultation</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label id="profileDateLabel" for="profileDate">Due date</label>
+          <input type="date" id="profileDate">
+        </div>
+        <div class="form-field" id="profileStartTimeField" style="display:none;">
+          <label for="profileStartTime">Start time</label>
+          <input type="time" id="profileStartTime" value="10:00">
+        </div>
+        <div class="form-field" id="profileEndTimeField" style="display:none;">
+          <label for="profileEndTime">End time</label>
+          <input type="time" id="profileEndTime" value="11:00">
+        </div>
+      </div>
+      <div class="form-field">
+        <label for="profileScheduleNotes">Notes (optional)</label>
+        <textarea id="profileScheduleNotes" rows="2" placeholder="Optional instructions or reminder notes..."></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-cancel" type="button" onclick="closeProfileScheduleModal()">Cancel</button>
+      <button class="btn-save" type="button" onclick="saveProfileScheduleEvent()">Save event</button>
+    </div>
+  </div>
+</div>
+
 <script src="data/schema.js"></script>
 <script src="data/patients.js"></script>
 <script src="data/sessions.js"></script>
@@ -360,6 +492,8 @@ let noteFeedbackTimer = null;
 let TRAJ_POINTS = [];
 let hoveredTrajPoint = null;
 let trendQualityFilter = 'all';
+let profileScheduleType = 'deadline';
+let scheduleFeedbackTimer = null;
 const TREND_GOOD = '#2F6FAE';
 const TREND_CAUTION = '#C77B30';
 /* ══════════════════════════════════════════════════════════
@@ -428,6 +562,174 @@ function setHtml(selector, html) {
   if (el) el.innerHTML = html;
 }
 
+function formatDateInput(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function parseDateInput(value) {
+  if (!value) return null;
+  const [year, month, day] = value.split('-').map(Number);
+  if ([year, month, day].some(Number.isNaN)) return null;
+  return new Date(year, month - 1, day);
+}
+
+function sameDay(a, b) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+function addOneHour(time) {
+  const [hours, minutes] = (time || '10:00').split(':').map(Number);
+  const next = new Date(2000, 0, 1, Number.isNaN(hours) ? 10 : hours, Number.isNaN(minutes) ? 0 : minutes);
+  next.setHours(next.getHours() + 1);
+  return `${String(next.getHours()).padStart(2, '0')}:${String(next.getMinutes()).padStart(2, '0')}`;
+}
+
+function daysInMonth(year, monthIndex) {
+  return new Date(year, monthIndex + 1, 0).getDate();
+}
+
+function addCalendarMonths(date, months, preferredDay) {
+  const next = new Date(date);
+  next.setDate(1);
+  next.setMonth(date.getMonth() + months);
+  next.setDate(Math.min(preferredDay, daysInMonth(next.getFullYear(), next.getMonth())));
+  return next;
+}
+
+function nextRepeatDate(startDate, repeat, step) {
+  const next = new Date(startDate);
+  if (repeat === 'daily') next.setDate(startDate.getDate() + step);
+  if (repeat === 'weekly') next.setDate(startDate.getDate() + step * 7);
+  if (repeat === 'biweekly') next.setDate(startDate.getDate() + step * 14);
+  if (repeat === 'monthly') return addCalendarMonths(startDate, step, startDate.getDate());
+  return next;
+}
+
+function profileDeadlineDates(startDate) {
+  const repeat = document.getElementById('profileRepeat').value;
+  const endMode = document.getElementById('profileRepeatEndMode').value;
+  if (repeat === 'never' || endMode === 'never') return [new Date(startDate)];
+  const endDate = parseDateInput(document.getElementById('profileRepeatEndDate').value);
+  if (!endDate) { alert('Please choose an end date for the repeat.'); return null; }
+  if (endDate < startDate) { alert('End repeat date must be on or after the due date.'); return null; }
+  const dates = [];
+  let step = 0;
+  while (true) {
+    const dueDate = nextRepeatDate(startDate, repeat, step);
+    if (dueDate > endDate) break;
+    dates.push(dueDate);
+    step += 1;
+    if (step > 260) { alert('Repeat range is too long for this prototype. Please choose an earlier end date.'); return null; }
+  }
+  return dates;
+}
+
+function setScheduleMessage(text) {
+  const message = document.getElementById('scheduleMessage');
+  if (!message) return;
+  if (scheduleFeedbackTimer) clearTimeout(scheduleFeedbackTimer);
+  message.textContent = text;
+  message.classList.toggle('show', !!text);
+  if (text) scheduleFeedbackTimer = setTimeout(() => {
+    message.textContent = '';
+    message.classList.remove('show');
+  }, 2800);
+}
+
+function setProfileScheduleType(type) {
+  profileScheduleType = type;
+  const isDeadline = type === 'deadline';
+  document.getElementById('profileDeadlineTab').className = 'type-tab' + (isDeadline ? ' active' : '');
+  document.getElementById('profileAppointmentTab').className = 'type-tab' + (!isDeadline ? ' active' : '');
+  document.getElementById('profileDeadlineFields').style.display = isDeadline ? '' : 'none';
+  document.getElementById('profileAppointmentFields').style.display = isDeadline ? 'none' : '';
+  document.getElementById('profileStartTimeField').style.display = isDeadline ? 'none' : '';
+  document.getElementById('profileEndTimeField').style.display = isDeadline ? 'none' : '';
+  document.getElementById('profileDateLabel').textContent = isDeadline ? 'Due date' : 'Date';
+  document.getElementById('profileScheduleNotes').placeholder = isDeadline ? 'Optional instructions or reminder notes...' : 'Appointment notes...';
+  updateProfileRepeatFields();
+}
+
+function updateProfileRepeatFields() {
+  const repeat = document.getElementById('profileRepeat');
+  const endMode = document.getElementById('profileRepeatEndMode');
+  const endDateField = document.getElementById('profileRepeatEndDateField');
+  if (!repeat || !endMode || !endDateField) return;
+  const repeats = repeat.value !== 'never';
+  endMode.disabled = !repeats;
+  if (!repeats) endMode.value = 'never';
+  endDateField.style.display = repeats && endMode.value === 'date' ? '' : 'none';
+}
+
+function openProfileScheduleModal() {
+  const today = new Date(ML.TODAY);
+  const fmt = formatDateInput(today);
+  setProfileScheduleType('deadline');
+  setText('#profileSchedulePatient', SELECTED_PATIENT.name);
+  document.getElementById('profileDate').value = fmt;
+  document.getElementById('profileStartTime').value = '10:00';
+  document.getElementById('profileEndTime').value = '11:00';
+  document.getElementById('profileRepeat').value = 'never';
+  document.getElementById('profileRepeatEndMode').value = 'never';
+  document.getElementById('profileRepeatEndDate').value = fmt;
+  document.getElementById('profileReminder').value = '1440';
+  document.getElementById('profilePurpose').value = 'Assessment';
+  document.getElementById('profileScheduleNotes').value = '';
+  updateProfileRepeatFields();
+  document.getElementById('profileScheduleOverlay').classList.add('open');
+}
+
+function closeProfileScheduleModal() {
+  document.getElementById('profileScheduleOverlay').classList.remove('open');
+}
+
+function closeProfileScheduleOutside(event) {
+  if (event.target === document.getElementById('profileScheduleOverlay')) closeProfileScheduleModal();
+}
+
+function saveProfileScheduleEvent() {
+  const date = parseDateInput(document.getElementById('profileDate').value);
+  if (!date) { alert('Please fill in a date.'); return; }
+  const note = document.getElementById('profileScheduleNotes').value;
+
+  if (profileScheduleType === 'deadline') {
+    const dates = profileDeadlineDates(date);
+    if (!dates) return;
+    const reminderLeadMinutes = parseInt(document.getElementById('profileReminder').value, 10) || 0;
+    dates.forEach(dueDate => {
+      ML.events.push(ML.makeHomeDeadline({
+        id: ML.events.length + 1,
+        patientId: SELECTED_PATIENT.id,
+        date: dueDate,
+        status: sameDay(dueDate, ML.TODAY) ? 'due' : 'scheduled',
+        reminderLeadMinutes,
+        note,
+      }));
+    });
+    closeProfileScheduleModal();
+    setScheduleMessage(`${dates.length === 1 ? 'Session' : dates.length + ' sessions'} scheduled from ${UI.formatShortDate(dates[0])}.`);
+    return;
+  }
+
+  const startTime = document.getElementById('profileStartTime').value;
+  if (!startTime) { alert('Please fill in a start time.'); return; }
+  const endTime = document.getElementById('profileEndTime').value;
+  const purpose = document.getElementById('profilePurpose').value;
+  ML.events.push(ML.makeClinicAppointment({
+    id: ML.events.length + 1,
+    patientId: SELECTED_PATIENT.id,
+    date,
+    time: startTime,
+    endTime,
+    title: SELECTED_PATIENT.name + ' - ' + purpose.toLowerCase(),
+    purpose,
+    status: 'scheduled',
+    note,
+  }));
+  closeProfileScheduleModal();
+  setScheduleMessage(`${purpose} scheduled for ${UI.formatShortDate(date)}.`);
+}
+
 function qualityCopy(session) {
   if (session.quality === 'caution') {
     return {
@@ -473,7 +775,7 @@ function renderProfileShell() {
   `);
 
   const scheduleButton = document.querySelector('.ph-actions .btn-outline');
-  if (scheduleButton) scheduleButton.onclick = () => { window.location.href = UI.scheduleUrl(SELECTED_PATIENT, { action: 'new-session' }); };
+  if (scheduleButton) scheduleButton.onclick = openProfileScheduleModal;
   const patientButton = document.querySelector('.ph-actions .btn-primary');
   if (patientButton) patientButton.onclick = () => { window.location.href = UI.patientViewUrl(SELECTED_PATIENT); };
 
@@ -1058,8 +1360,20 @@ function setupTrajInteraction() {
   });
 }
 
+function setupProfileScheduleModal() {
+  const startTime = document.getElementById('profileStartTime');
+  if (startTime) {
+    startTime.addEventListener('change', event => {
+      document.getElementById('profileEndTime').value = addOneHour(event.target.value);
+    });
+  }
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') closeProfileScheduleModal();
+  });
+}
+
 /* Boot */
-window.addEventListener('load', ()=> { renderProfileShell(); setupRecentSessionSorting(); setupTrendQualityFilter(); setupTrajInteraction(); redrawCharts(); });
+window.addEventListener('load', ()=> { renderProfileShell(); setupRecentSessionSorting(); setupTrendQualityFilter(); setupTrajInteraction(); setupProfileScheduleModal(); redrawCharts(); });
 window.addEventListener('resize', ()=> redrawCharts());
 </script>
 </body>
