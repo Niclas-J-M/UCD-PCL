@@ -222,6 +222,14 @@ body{font-family:'Segoe UI','Helvetica Neue',system-ui,sans-serif;background:var
 .btn-cancel:hover{background:var(--bg);}
 .btn-save{background:var(--navy);color:#fff;border:none;padding:9px 22px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s;}
 .btn-save:hover{background:var(--navy-soft);}
+.schedule-toast{display:none;position:fixed;right:24px;top:76px;z-index:700;max-width:360px;background:#fff;border:1px solid #CFE3DC;border-left:5px solid var(--good);border-radius:10px;box-shadow:var(--shadow-lg);padding:14px 42px 14px 16px;color:var(--text);}
+.schedule-toast.show{display:block;}
+.schedule-toast-title{font-weight:800;color:var(--good);font-size:13px;margin-bottom:2px;}
+.schedule-toast-body{font-size:13px;color:var(--text);}
+.schedule-toast-close{position:absolute;right:10px;top:9px;border:0;background:transparent;color:var(--text-faint);font-size:18px;line-height:1;cursor:pointer;}
+@media(max-width:560px){
+  .schedule-toast{left:14px;right:14px;top:68px;max-width:none;}
+}
 </style>
 </head>
 <body>
@@ -435,6 +443,12 @@ body{font-family:'Segoe UI','Helvetica Neue',system-ui,sans-serif;background:var
   </div>
 </div>
 
+<div class="schedule-toast" id="scheduleToast" role="status" aria-live="polite">
+  <button class="schedule-toast-close" type="button" onclick="hideScheduleMessage()" aria-label="Dismiss schedule confirmation">&#215;</button>
+  <div class="schedule-toast-title">Event saved</div>
+  <div class="schedule-toast-body" id="scheduleToastBody"></div>
+</div>
+
 <script src="data/schema.js"></script>
 <script src="data/patients.js"></script>
 <script src="data/sessions.js"></script>
@@ -442,9 +456,11 @@ body{font-family:'Segoe UI','Helvetica Neue',system-ui,sans-serif;background:var
 <script src="data/notes.js"></script>
 <script src="data/index.js"></script>
 <script src="ui/helpers.js"></script>
+<script src="ui/schedule-modal.js"></script>
 <script>
 const ML = window.MemoryLabData;
 const UI = window.MemoryLabUI;
+const SCHED = window.MemoryLabScheduleModal;
 /* Shared local schedule data from MemoryLabData */
 const TODAY = ML.TODAY;
 const PATIENTS = ML.patients;
@@ -467,6 +483,7 @@ let modalPatientSearch = '';
 let modalSelectedPatientId = '';
 let modalPatientDropdownOpen = false;
 let selectedDay = null;
+let scheduleFeedbackTimer = null;
 let selectedEvt = null;
 
 /* ════════════════════════════════════════════════════════
@@ -519,15 +536,6 @@ function eventColour(e){
   if(isPersonalBlock(e)) return 'var(--navy-soft)';
   if(e.status === 'overdue') return 'var(--red)';
   return 'var(--deadline)';
-}
-
-function addOneHour(timeString){
-  if(!timeString || !timeString.includes(':')) return '';
-  const [h,m]=timeString.split(':').map(Number);
-  if(Number.isNaN(h)||Number.isNaN(m)) return '';
-  const d=new Date(2026,0,1,h,m);
-  d.setHours(d.getHours()+1);
-  return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
 }
 
 function formatEventTime(e){
@@ -935,6 +943,28 @@ function clearPatientFilter(){
 let modalType='deadline';
 function openModal(){ setModalType('deadline'); openModalWithDate(TODAY,'10:00'); }
 
+function setScheduleMessage(text) {
+  const toast = document.getElementById('scheduleToast');
+  const toastBody = document.getElementById('scheduleToastBody');
+  if (scheduleFeedbackTimer) clearTimeout(scheduleFeedbackTimer);
+  if (toast && toastBody) {
+    toastBody.textContent = text;
+    toast.classList.toggle('show', !!text);
+  }
+  if (text) scheduleFeedbackTimer = setTimeout(() => {
+    hideScheduleMessage();
+  }, 4800);
+}
+
+function hideScheduleMessage() {
+  const toast = document.getElementById('scheduleToast');
+  if (scheduleFeedbackTimer) {
+    clearTimeout(scheduleFeedbackTimer);
+    scheduleFeedbackTimer = null;
+  }
+  if (toast) toast.classList.remove('show');
+}
+
 function renderModalPatientPicker(){
   const input=document.getElementById('mPatientSearch');
   const results=document.getElementById('mPatientResults');
@@ -1011,16 +1041,15 @@ function setModalPatient(patientId){
 }
 
 function openModalWithDate(d,time,patientId){
-  const fmt=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  const startTime=time||'10:00';
-  document.getElementById('mDate').value=fmt;
-  document.getElementById('mStartTime').value=startTime;
-  document.getElementById('mEndTime').value=addOneHour(startTime);
-  document.getElementById('mRepeat').value='never';
-  document.getElementById('mRepeatEndMode').value='never';
-  document.getElementById('mRepeatEndDate').value=fmt;
-  document.getElementById('mReminder').value='1440';
-  document.getElementById('mNotes').value='';
+  const values=SCHED.defaultValues(d,time||'10:00');
+  document.getElementById('mDate').value=values.dateValue;
+  document.getElementById('mStartTime').value=values.startTime;
+  document.getElementById('mEndTime').value=values.endTime;
+  document.getElementById('mRepeat').value=values.repeat;
+  document.getElementById('mRepeatEndMode').value=values.repeatEndMode;
+  document.getElementById('mRepeatEndDate').value=values.repeatEndDate;
+  document.getElementById('mReminder').value=values.reminderLeadMinutes;
+  document.getElementById('mNotes').value=values.note;
   updateDeadlineRepeatFields();
   setModalPatient(patientId||'');
   document.getElementById('modalOverlay').classList.add('open');
@@ -1046,101 +1075,59 @@ function setModalType(t){
 }
 
 function updateDeadlineRepeatFields(){
-  const repeat=document.getElementById('mRepeat');
-  const endMode=document.getElementById('mRepeatEndMode');
-  const endDateField=document.getElementById('repeatEndDateField');
-  if(!repeat||!endMode||!endDateField) return;
-  const repeats=repeat.value!=='never';
-  endMode.disabled=!repeats;
-  if(!repeats) endMode.value='never';
-  endDateField.style.display=repeats&&endMode.value==='date'?'':'none';
-}
-
-function parseDateInput(value){
-  if(!value) return null;
-  const [y,m,d]=value.split('-').map(Number);
-  if([y,m,d].some(Number.isNaN)) return null;
-  return new Date(y,m-1,d);
-}
-
-function daysInMonth(year, monthIndex){
-  return new Date(year, monthIndex+1, 0).getDate();
-}
-
-function addCalendarMonths(date, months, preferredDay){
-  const next=new Date(date);
-  next.setDate(1);
-  next.setMonth(date.getMonth()+months);
-  next.setDate(Math.min(preferredDay, daysInMonth(next.getFullYear(), next.getMonth())));
-  return next;
-}
-
-function nextRepeatDate(startDate, repeat, step){
-  const next=new Date(startDate);
-  if(repeat==='daily') next.setDate(startDate.getDate()+step);
-  if(repeat==='weekly') next.setDate(startDate.getDate()+step*7);
-  if(repeat==='biweekly') next.setDate(startDate.getDate()+step*14);
-  if(repeat==='monthly') return addCalendarMonths(startDate, step, startDate.getDate());
-  return next;
-}
-
-function deadlineDates(startDate){
-  const repeat=document.getElementById('mRepeat').value;
-  const endMode=document.getElementById('mRepeatEndMode').value;
-  if(repeat==='never'||endMode==='never') return [new Date(startDate)];
-  const endDate=parseDateInput(document.getElementById('mRepeatEndDate').value);
-  if(!endDate){alert('Please choose an end date for the repeat.'); return null;}
-  if(endDate<startDate){alert('End repeat date must be on or after the due date.'); return null;}
-  const dates=[];
-  let step=0;
-  while(true){
-    const dueDate=nextRepeatDate(startDate, repeat, step);
-    if(dueDate>endDate) break;
-    dates.push(dueDate);
-    step+=1;
-    if(step>260){alert('Repeat range is too long for this prototype. Please choose an earlier end date.'); return null;}
-  }
-  return dates;
+  SCHED.updateRepeatFields({
+    repeatEl: document.getElementById('mRepeat'),
+    endModeEl: document.getElementById('mRepeatEndMode'),
+    endDateFieldEl: document.getElementById('repeatEndDateField')
+  });
 }
 
 function saveEvent(){
   const dateVal=document.getElementById('mDate').value;
   const timeVal=document.getElementById('mStartTime').value;
   const endTimeVal=document.getElementById('mEndTime').value;
+  let feedbackText = '';
   if(!dateVal){alert('Please fill in a date.'); return;}
-  const newDate=parseDateInput(dateVal);
+  const newDate=SCHED.parseDateInput(dateVal);
   const patientId=document.getElementById('mPatient').value;
   if(!patientId){alert('Please select a patient.'); return;}
   if(modalType==='deadline'){
-    const dates=deadlineDates(newDate);
+    const dates=SCHED.deadlineDates({
+      startDate:newDate,
+      repeat:document.getElementById('mRepeat').value,
+      endMode:document.getElementById('mRepeatEndMode').value,
+      endDateValue:document.getElementById('mRepeatEndDate').value
+    });
     if(!dates) return;
     const reminderLeadMinutes=parseInt(document.getElementById('mReminder').value,10)||0;
-    dates.forEach(dueDate=>{
-      EVENTS.push(ML.makeHomeDeadline({
-        id:EVENTS.length+1,
-        patientId,
-        date:dueDate,
-        status:sameDay(dueDate,TODAY)?'due':'scheduled',
-        reminderLeadMinutes,
-        note:document.getElementById('mNotes').value
-      }));
+    SCHED.createHomeDeadlines({
+      targetEvents:EVENTS,
+      ML,
+      patientId,
+      dates,
+      reminderLeadMinutes,
+      note:document.getElementById('mNotes').value
     });
+    feedbackText = dates.length === 1
+      ? `At-home session scheduled for ${UI.formatShortDate(dates[0])}.`
+      : `${dates.length} at-home sessions scheduled from ${UI.formatShortDate(dates[0])}.`;
   } else {
     if(!timeVal){alert('Please fill in a start time.'); return;}
-    const patient=ML.getPatient(patientId);
     const purpose=document.getElementById('mPurpose').value;
-    EVENTS.push(ML.makeClinicAppointment({id:EVENTS.length+1,patientId,date:newDate,time:timeVal,endTime:endTimeVal,title:patient.name+' - '+purpose.toLowerCase(),purpose,status:'scheduled',note:document.getElementById('mNotes').value}));
+    SCHED.createClinicAppointment({targetEvents:EVENTS,ML,patientId,date:newDate,time:timeVal,endTime:endTimeVal,purpose,note:document.getElementById('mNotes').value});
+    feedbackText = `${purpose} scheduled for ${UI.formatShortDate(newDate)}.`;
   }
   closeModal();
   if(currentView==='month') renderMonth(); else renderWeek();
   showDayAgenda(newDate);
+  setScheduleMessage(feedbackText);
 }
 
 /* ════════════════════════════════════════════════════════
    INIT
 ════════════════════════════════════════════════════════ */
 document.getElementById('mStartTime').addEventListener('change', e=>{
-  document.getElementById('mEndTime').value=addOneHour(e.target.value);
+  document.getElementById('mEndTime').value=SCHED.addOneHour(e.target.value);
 });
 
 const scheduleParams = new URLSearchParams(window.location.search);

@@ -56,8 +56,11 @@
   .btn-primary:hover{background:#A50918;}
   .btn-outline{background:#fff;color:var(--navy);border:1px solid var(--border);padding:10px 18px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;}
   .btn-outline:hover{background:var(--bg);border-color:var(--text-faint);}
-  .schedule-message{display:none;margin-top:12px;padding:9px 11px;border-radius:8px;background:var(--good-soft);border:1px solid #CFE3DC;color:var(--good);font-size:12.5px;font-weight:700;}
-  .schedule-message.show{display:block;}
+  .schedule-toast{display:none;position:fixed;right:24px;top:76px;z-index:700;max-width:360px;background:#fff;border:1px solid #CFE3DC;border-left:5px solid var(--good);border-radius:10px;box-shadow:0 12px 32px rgba(26,35,64,.18);padding:14px 42px 14px 16px;color:var(--text);}
+  .schedule-toast.show{display:block;}
+  .schedule-toast-title{font-weight:800;color:var(--good);font-size:13px;margin-bottom:2px;}
+  .schedule-toast-body{font-size:13px;color:var(--text);}
+  .schedule-toast-close{position:absolute;right:10px;top:9px;border:0;background:transparent;color:var(--text-faint);font-size:18px;line-height:1;cursor:pointer;}
 
   /* layout */
   .body-grid{display:grid;grid-template-columns:1fr 340px;gap:22px;align-items:start;}
@@ -249,6 +252,7 @@
     .type-tabs,.form-row{grid-template-columns:1fr;display:grid;}
     .modal-foot{flex-direction:column-reverse;}
     .btn-cancel,.btn-save{width:100%;}
+    .schedule-toast{left:14px;right:14px;top:68px;max-width:none;}
   }
 </style>
 </head>
@@ -279,7 +283,6 @@
     <div class="ph-main">
       <h1>Loading patient</h1>
       <div class="ph-tags"></div>
-      <div class="schedule-message" id="scheduleMessage"></div>
     </div>
     <div class="ph-actions">
       <button class="btn-outline" type="button">Schedule session</button>
@@ -374,6 +377,12 @@
       </div>
     </div>
   </div>
+</div>
+
+<div class="schedule-toast" id="scheduleToast" role="status" aria-live="polite">
+  <button class="schedule-toast-close" type="button" onclick="hideScheduleMessage()" aria-label="Dismiss schedule confirmation">&#215;</button>
+  <div class="schedule-toast-title">Event saved</div>
+  <div class="schedule-toast-body" id="scheduleToastBody"></div>
 </div>
 
 <div class="modal-overlay" id="profileScheduleOverlay" onclick="closeProfileScheduleOutside(event)">
@@ -480,9 +489,11 @@
 <script src="data/notes.js"></script>
 <script src="data/index.js"></script>
 <script src="ui/helpers.js"></script>
+<script src="ui/schedule-modal.js"></script>
 <script>
 const ML = window.MemoryLabData;
 const UI = window.MemoryLabUI;
+const SCHED = window.MemoryLabScheduleModal;
 let SELECTED_PATIENT = ML.getPatientFromUrl();
 let SELECTED_SESSIONS = ML.sessionsForPatient(SELECTED_PATIENT.id);
 let showAllSessions = false;
@@ -562,78 +573,26 @@ function setHtml(selector, html) {
   if (el) el.innerHTML = html;
 }
 
-function formatDateInput(date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-}
-
-function parseDateInput(value) {
-  if (!value) return null;
-  const [year, month, day] = value.split('-').map(Number);
-  if ([year, month, day].some(Number.isNaN)) return null;
-  return new Date(year, month - 1, day);
-}
-
-function sameDay(a, b) {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-}
-
-function addOneHour(time) {
-  const [hours, minutes] = (time || '10:00').split(':').map(Number);
-  const next = new Date(2000, 0, 1, Number.isNaN(hours) ? 10 : hours, Number.isNaN(minutes) ? 0 : minutes);
-  next.setHours(next.getHours() + 1);
-  return `${String(next.getHours()).padStart(2, '0')}:${String(next.getMinutes()).padStart(2, '0')}`;
-}
-
-function daysInMonth(year, monthIndex) {
-  return new Date(year, monthIndex + 1, 0).getDate();
-}
-
-function addCalendarMonths(date, months, preferredDay) {
-  const next = new Date(date);
-  next.setDate(1);
-  next.setMonth(date.getMonth() + months);
-  next.setDate(Math.min(preferredDay, daysInMonth(next.getFullYear(), next.getMonth())));
-  return next;
-}
-
-function nextRepeatDate(startDate, repeat, step) {
-  const next = new Date(startDate);
-  if (repeat === 'daily') next.setDate(startDate.getDate() + step);
-  if (repeat === 'weekly') next.setDate(startDate.getDate() + step * 7);
-  if (repeat === 'biweekly') next.setDate(startDate.getDate() + step * 14);
-  if (repeat === 'monthly') return addCalendarMonths(startDate, step, startDate.getDate());
-  return next;
-}
-
-function profileDeadlineDates(startDate) {
-  const repeat = document.getElementById('profileRepeat').value;
-  const endMode = document.getElementById('profileRepeatEndMode').value;
-  if (repeat === 'never' || endMode === 'never') return [new Date(startDate)];
-  const endDate = parseDateInput(document.getElementById('profileRepeatEndDate').value);
-  if (!endDate) { alert('Please choose an end date for the repeat.'); return null; }
-  if (endDate < startDate) { alert('End repeat date must be on or after the due date.'); return null; }
-  const dates = [];
-  let step = 0;
-  while (true) {
-    const dueDate = nextRepeatDate(startDate, repeat, step);
-    if (dueDate > endDate) break;
-    dates.push(dueDate);
-    step += 1;
-    if (step > 260) { alert('Repeat range is too long for this prototype. Please choose an earlier end date.'); return null; }
-  }
-  return dates;
-}
-
 function setScheduleMessage(text) {
-  const message = document.getElementById('scheduleMessage');
-  if (!message) return;
+  const toast = document.getElementById('scheduleToast');
+  const toastBody = document.getElementById('scheduleToastBody');
   if (scheduleFeedbackTimer) clearTimeout(scheduleFeedbackTimer);
-  message.textContent = text;
-  message.classList.toggle('show', !!text);
+  if (toast && toastBody) {
+    toastBody.textContent = text;
+    toast.classList.toggle('show', !!text);
+  }
   if (text) scheduleFeedbackTimer = setTimeout(() => {
-    message.textContent = '';
-    message.classList.remove('show');
-  }, 2800);
+    hideScheduleMessage();
+  }, 4800);
+}
+
+function hideScheduleMessage() {
+  const toast = document.getElementById('scheduleToast');
+  if (scheduleFeedbackTimer) {
+    clearTimeout(scheduleFeedbackTimer);
+    scheduleFeedbackTimer = null;
+  }
+  if (toast) toast.classList.remove('show');
 }
 
 function setProfileScheduleType(type) {
@@ -651,30 +610,26 @@ function setProfileScheduleType(type) {
 }
 
 function updateProfileRepeatFields() {
-  const repeat = document.getElementById('profileRepeat');
-  const endMode = document.getElementById('profileRepeatEndMode');
-  const endDateField = document.getElementById('profileRepeatEndDateField');
-  if (!repeat || !endMode || !endDateField) return;
-  const repeats = repeat.value !== 'never';
-  endMode.disabled = !repeats;
-  if (!repeats) endMode.value = 'never';
-  endDateField.style.display = repeats && endMode.value === 'date' ? '' : 'none';
+  SCHED.updateRepeatFields({
+    repeatEl: document.getElementById('profileRepeat'),
+    endModeEl: document.getElementById('profileRepeatEndMode'),
+    endDateFieldEl: document.getElementById('profileRepeatEndDateField'),
+  });
 }
 
 function openProfileScheduleModal() {
-  const today = new Date(ML.TODAY);
-  const fmt = formatDateInput(today);
+  const values = SCHED.defaultValues(new Date(ML.TODAY), '10:00');
   setProfileScheduleType('deadline');
   setText('#profileSchedulePatient', SELECTED_PATIENT.name);
-  document.getElementById('profileDate').value = fmt;
-  document.getElementById('profileStartTime').value = '10:00';
-  document.getElementById('profileEndTime').value = '11:00';
-  document.getElementById('profileRepeat').value = 'never';
-  document.getElementById('profileRepeatEndMode').value = 'never';
-  document.getElementById('profileRepeatEndDate').value = fmt;
-  document.getElementById('profileReminder').value = '1440';
-  document.getElementById('profilePurpose').value = 'Assessment';
-  document.getElementById('profileScheduleNotes').value = '';
+  document.getElementById('profileDate').value = values.dateValue;
+  document.getElementById('profileStartTime').value = values.startTime;
+  document.getElementById('profileEndTime').value = values.endTime;
+  document.getElementById('profileRepeat').value = values.repeat;
+  document.getElementById('profileRepeatEndMode').value = values.repeatEndMode;
+  document.getElementById('profileRepeatEndDate').value = values.repeatEndDate;
+  document.getElementById('profileReminder').value = values.reminderLeadMinutes;
+  document.getElementById('profilePurpose').value = values.purpose;
+  document.getElementById('profileScheduleNotes').value = values.note;
   updateProfileRepeatFields();
   document.getElementById('profileScheduleOverlay').classList.add('open');
 }
@@ -688,26 +643,31 @@ function closeProfileScheduleOutside(event) {
 }
 
 function saveProfileScheduleEvent() {
-  const date = parseDateInput(document.getElementById('profileDate').value);
+  const date = SCHED.parseDateInput(document.getElementById('profileDate').value);
   if (!date) { alert('Please fill in a date.'); return; }
   const note = document.getElementById('profileScheduleNotes').value;
 
   if (profileScheduleType === 'deadline') {
-    const dates = profileDeadlineDates(date);
+    const dates = SCHED.deadlineDates({
+      startDate: date,
+      repeat: document.getElementById('profileRepeat').value,
+      endMode: document.getElementById('profileRepeatEndMode').value,
+      endDateValue: document.getElementById('profileRepeatEndDate').value,
+    });
     if (!dates) return;
     const reminderLeadMinutes = parseInt(document.getElementById('profileReminder').value, 10) || 0;
-    dates.forEach(dueDate => {
-      ML.events.push(ML.makeHomeDeadline({
-        id: ML.events.length + 1,
-        patientId: SELECTED_PATIENT.id,
-        date: dueDate,
-        status: sameDay(dueDate, ML.TODAY) ? 'due' : 'scheduled',
-        reminderLeadMinutes,
-        note,
-      }));
+    SCHED.createHomeDeadlines({
+      targetEvents: ML.events,
+      ML,
+      patientId: SELECTED_PATIENT.id,
+      dates,
+      reminderLeadMinutes,
+      note,
     });
     closeProfileScheduleModal();
-    setScheduleMessage(`${dates.length === 1 ? 'Session' : dates.length + ' sessions'} scheduled from ${UI.formatShortDate(dates[0])}.`);
+    setScheduleMessage(dates.length === 1
+      ? `At-home session scheduled for ${UI.formatShortDate(dates[0])}.`
+      : `${dates.length} at-home sessions scheduled from ${UI.formatShortDate(dates[0])}.`);
     return;
   }
 
@@ -715,17 +675,16 @@ function saveProfileScheduleEvent() {
   if (!startTime) { alert('Please fill in a start time.'); return; }
   const endTime = document.getElementById('profileEndTime').value;
   const purpose = document.getElementById('profilePurpose').value;
-  ML.events.push(ML.makeClinicAppointment({
-    id: ML.events.length + 1,
+  SCHED.createClinicAppointment({
+    targetEvents: ML.events,
+    ML,
     patientId: SELECTED_PATIENT.id,
     date,
     time: startTime,
     endTime,
-    title: SELECTED_PATIENT.name + ' - ' + purpose.toLowerCase(),
     purpose,
-    status: 'scheduled',
     note,
-  }));
+  });
   closeProfileScheduleModal();
   setScheduleMessage(`${purpose} scheduled for ${UI.formatShortDate(date)}.`);
 }
@@ -1364,7 +1323,7 @@ function setupProfileScheduleModal() {
   const startTime = document.getElementById('profileStartTime');
   if (startTime) {
     startTime.addEventListener('change', event => {
-      document.getElementById('profileEndTime').value = addOneHour(event.target.value);
+      document.getElementById('profileEndTime').value = SCHED.addOneHour(event.target.value);
     });
   }
   document.addEventListener('keydown', event => {
