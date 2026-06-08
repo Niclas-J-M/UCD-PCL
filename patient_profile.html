@@ -489,10 +489,12 @@
 <script src="data/notes.js"></script>
 <script src="data/index.js"></script>
 <script src="ui/helpers.js"></script>
+<script src="ui/sgma-norms.js"></script>
 <script src="ui/schedule-modal.js"></script>
 <script>
 const ML = window.MemoryLabData;
 const UI = window.MemoryLabUI;
+const NORMS = window.MemoryLabNorms;
 const SCHED = window.MemoryLabScheduleModal;
 let SELECTED_PATIENT = ML.getPatientFromUrl();
 let SELECTED_SESSIONS = ML.sessionsForPatient(SELECTED_PATIENT.id);
@@ -507,42 +509,6 @@ let profileScheduleType = 'deadline';
 let scheduleFeedbackTimer = null;
 const TREND_GOOD = '#2F6FAE';
 const TREND_CAUTION = '#C77B30';
-/* ══════════════════════════════════════════════════════════
-   SGMA NORM CALCULATION ENGINE
-   THis is based on what is provided in SGMA_Norm_Calculation_Reference.md
-   ══════════════════════════════════════════════════════════ */
-
-function normCDF(z) {
-  const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
-  const sign=z<0?-1:1, x=Math.abs(z)/Math.sqrt(2), t=1/(1+p*x);
-  const y=1-(((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-x*x);
-  return 0.5*(1+sign*y);
-}
-
-function normInvCDF(p) {
-  const a=[-3.969683028665376e+01,2.209460984245205e+02,-2.759285104469687e+02,1.383577518672690e+02,-3.066479806614716e+01,2.506628277459239e+00];
-  const b=[-5.447609879822406e+01,1.615858368580409e+02,-1.556989798598866e+02,6.680131188771972e+01,-1.328068155288572e+01];
-  const c=[-7.784894002430293e-03,-3.223964580411365e-01,-2.400758277161838e+00,-2.549732539343734e+00,4.374664141464968e+00,2.938163982698783e+00];
-  const d=[7.784695709041462e-03,3.224671290700398e-01,2.445134137142996e+00,3.754408661907416e+00];
-  const plow=0.02425, phigh=1-plow;
-  let q;
-  if(p<plow){q=Math.sqrt(-2*Math.log(p));return(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);}
-  else if(p<=phigh){q=p-0.5;const r=q*q;return(((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q/(((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);}
-  else{q=Math.sqrt(-2*Math.log(1-p));return-(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);}
-}
-
-/* Education offsets exactly as specified in the document:
-   0=Elementary(0.000), 1=Vocational(-0.006), 2=Pre-university(-0.021),
-   3=Higher vocational(-0.024), 4=Academic(-0.036) */
-const EDU_OFFSETS = [0.000, -0.006, -0.021, -0.024, -0.036];
-const EDU_LABELS  = ['Elementary','Vocational (MBO/VMBO)','Pre-university (HAVO/VWO)','Higher vocational (HBO)','Academic'];
-const B0=0.32, B_AGE=0.0015, SIGMA=0.036;
-
-function predictedSoF(age,off){ return B0 + B_AGE*age + off; }
-function sofAtPercentile(age,p,off){ return predictedSoF(age,off) - normInvCDF(p)*SIGMA; }
-function sofToSGMA(sof){ return 140/(1+Math.exp(15*(sof-0.33)))+30; }
-function calcPercentile(age,sof,off){ return normCDF((predictedSoF(age,off)-sof)/SIGMA)*100; }
-
 function bandName(pct) {
   if(pct>=80) return {name:'Good',         bg:'#D6EAD8',fg:'#2A5C2F'};
   if(pct>=60) return {name:'Above average',bg:'#DEE9F5',fg:'#1F4070'};
@@ -894,7 +860,7 @@ function sortRecentSessions(items) {
       result = a.index - b.index;
       if (recentSort.dir === 'desc') result *= -1;
     } else if (recentSort.key === 'sgma') {
-      result = sofToSGMA(a.session.sof) - sofToSGMA(b.session.sof);
+      result = NORMS.sofToSGMA(a.session.sof) - NORMS.sofToSGMA(b.session.sof);
       if (recentSort.dir === 'desc') result *= -1;
     } else if (recentSort.key === 'quality') {
       const aRank = a.session.quality === 'caution' ? 0 : 1;
@@ -926,7 +892,7 @@ function renderRecentSessions() {
     <div class="hist-item" role="link" tabindex="0" data-session-index="${index}" aria-label="Open session ${index + 1}">
       <span class="hist-session">Session ${index + 1}</span>
       <span class="hist-date">${session.date}</span>
-      <span class="hist-sgma">SGMA ${Math.round(sofToSGMA(session.sof))}</span>
+      <span class="hist-sgma">SGMA ${Math.round(NORMS.sofToSGMA(session.sof))}</span>
       <span class="hist-q ${session.quality === 'caution' ? 'caution' : 'good'}">${session.quality === 'caution' ? 'Caution' : 'Good'}</span>
     </div>
   `).join('');
@@ -956,7 +922,7 @@ function renderRecentSessions() {
    ══════════════════════════════════════════════════════════ */
 function redrawCharts() {
   const eduIdx = SELECTED_PATIENT.educationCode;
-  const off    = EDU_OFFSETS[eduIdx];
+  const off    = NORMS.educationOffsets[eduIdx];
   drawTrajPlot(off);
 }
 
@@ -985,11 +951,11 @@ function drawNormPlot(off, eduLbl, patSGMA, patPct) {
   for(let a=AGE_MIN;a<=AGE_MAX;a++) ages.push(a);
 
   /* Compute band boundary arrays */
-  const p80 = ages.map(a=>sofToSGMA(sofAtPercentile(a,0.80,off)));
-  const p60 = ages.map(a=>sofToSGMA(sofAtPercentile(a,0.60,off)));
-  const p50 = ages.map(a=>sofToSGMA(sofAtPercentile(a,0.50,off)));
-  const p40 = ages.map(a=>sofToSGMA(sofAtPercentile(a,0.40,off)));
-  const p20 = ages.map(a=>sofToSGMA(sofAtPercentile(a,0.20,off)));
+  const p80 = ages.map(a=>NORMS.sofToSGMA(NORMS.sofAtPercentile(a,0.80,off)));
+  const p60 = ages.map(a=>NORMS.sofToSGMA(NORMS.sofAtPercentile(a,0.60,off)));
+  const p50 = ages.map(a=>NORMS.sofToSGMA(NORMS.sofAtPercentile(a,0.50,off)));
+  const p40 = ages.map(a=>NORMS.sofToSGMA(NORMS.sofAtPercentile(a,0.40,off)));
+  const p20 = ages.map(a=>NORMS.sofToSGMA(NORMS.sofAtPercentile(a,0.20,off)));
   const top = ages.map(()=>SG_MAX);
   const bot = ages.map(()=>SG_MIN);
 
@@ -1068,14 +1034,14 @@ function drawNormPlot(off, eduLbl, patSGMA, patPct) {
 
   /* Patient dot */
   const patX  = xOf(PATIENT.age);
-  const patY  = yOf(sofToSGMA(PATIENT.observedSoF));
+  const patY  = yOf(NORMS.sofToSGMA(PATIENT.observedSoF));
   ctx.beginPath(); ctx.arc(patX, patY, 10, 0, Math.PI*2);
   ctx.fillStyle='rgba(190,10,30,0.12)'; ctx.fill();
   ctx.beginPath(); ctx.arc(patX, patY, 6, 0, Math.PI*2);
   ctx.fillStyle='#BE0A1E'; ctx.fill();
   ctx.strokeStyle='#fff'; ctx.lineWidth=2.5; ctx.stroke();
   ctx.textAlign='center'; ctx.font='bold 11px system-ui,sans-serif'; ctx.fillStyle='#1A2340';
-  ctx.fillText(SELECTED_PATIENT.name.split(' ')[0]+' \xb7 '+Math.round(sofToSGMA(PATIENT.observedSoF)), patX, patY-14);
+  ctx.fillText(SELECTED_PATIENT.name.split(' ')[0]+' \xb7 '+Math.round(NORMS.sofToSGMA(PATIENT.observedSoF)), patX, patY-14);
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -1094,7 +1060,7 @@ function drawTrajPlot(off) {
   const allPoints = SESSIONS.map((session, index) => ({
     session,
     index,
-    sgma: sofToSGMA(session.sof),
+    sgma: NORMS.sofToSGMA(session.sof),
     date: parseSessionDate(session),
   }));
   const visiblePoints = trendQualityFilter === 'good' ? allPoints.filter(point => point.session.quality !== 'caution') : allPoints;
@@ -1119,10 +1085,10 @@ function drawTrajPlot(off) {
 
   /* Band boundaries at patient's age */
   const bSGMA = {
-    p80: sofToSGMA(sofAtPercentile(PATIENT.age,0.80,off)),
-    p60: sofToSGMA(sofAtPercentile(PATIENT.age,0.60,off)),
-    p40: sofToSGMA(sofAtPercentile(PATIENT.age,0.40,off)),
-    p20: sofToSGMA(sofAtPercentile(PATIENT.age,0.20,off)),
+    p80: NORMS.sofToSGMA(NORMS.sofAtPercentile(PATIENT.age,0.80,off)),
+    p60: NORMS.sofToSGMA(NORMS.sofAtPercentile(PATIENT.age,0.60,off)),
+    p40: NORMS.sofToSGMA(NORMS.sofAtPercentile(PATIENT.age,0.40,off)),
+    p20: NORMS.sofToSGMA(NORMS.sofAtPercentile(PATIENT.age,0.20,off)),
   };
 
   function fillHBand(t,b,col) {

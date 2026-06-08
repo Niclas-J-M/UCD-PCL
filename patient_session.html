@@ -257,17 +257,15 @@
 <script src="data/notes.js"></script>
 <script src="data/index.js"></script>
 <script src="ui/helpers.js"></script>
+<script src="ui/sgma-norms.js"></script>
 <script>
 const ML = window.MemoryLabData;
 const UI = window.MemoryLabUI;
+const NORMS = window.MemoryLabNorms;
 let SELECTED_PATIENT = ML.getPatientFromUrl();
 let SESSIONS = ML.sessionsForPatient(SELECTED_PATIENT.id);
 let SESSION_INDEX = getSessionIndex();
 let SESSION = SESSIONS[SESSION_INDEX] || ML.latestSession(SELECTED_PATIENT);
-
-const EDU_OFFSETS = [0.000, -0.006, -0.021, -0.024, -0.036];
-const EDU_LABELS  = ['Elementary','Vocational (MBO/VMBO)','Pre-university (HAVO/VWO)','Higher vocational (HBO)','Academic'];
-const B0=0.32, B_AGE=0.0015, SIGMA=0.036;
 
 function getSessionIndex() {
   const raw = parseInt(new URLSearchParams(window.location.search).get('session'), 10);
@@ -275,29 +273,6 @@ function getSessionIndex() {
   return Math.max(0, Math.min(SESSIONS.length - 1, raw));
 }
 
-function normCDF(z) {
-  const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
-  const sign=z<0?-1:1, x=Math.abs(z)/Math.sqrt(2), t=1/(1+p*x);
-  const y=1-(((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-x*x);
-  return 0.5*(1+sign*y);
-}
-
-function normInvCDF(p) {
-  const a=[-3.969683028665376e+01,2.209460984245205e+02,-2.759285104469687e+02,1.383577518672690e+02,-3.066479806614716e+01,2.506628277459239e+00];
-  const b=[-5.447609879822406e+01,1.615858368580409e+02,-1.556989798598866e+02,6.680131188771972e+01,-1.328068155288572e+01];
-  const c=[-7.784894002430293e-03,-3.223964580411365e-01,-2.400758277161838e+00,-2.549732539343734e+00,4.374664141464968e+00,2.938163982698783e+00];
-  const d=[7.784695709041462e-03,3.224671290700398e-01,2.445134137142996e+00,3.754408661907416e+00];
-  const plow=0.02425, phigh=1-plow;
-  let q;
-  if(p<plow){q=Math.sqrt(-2*Math.log(p));return(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);}
-  if(p<=phigh){q=p-0.5;const r=q*q;return(((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q/(((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);}
-  q=Math.sqrt(-2*Math.log(1-p));return-(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
-}
-
-function predictedSoF(age,off){ return B0 + B_AGE*age + off; }
-function sofAtPercentile(age,p,off){ return predictedSoF(age,off) - normInvCDF(p)*SIGMA; }
-function sofToSGMA(sof){ return 140/(1+Math.exp(15*(sof-0.33)))+30; }
-function calcPercentile(age,sof,off){ return normCDF((predictedSoF(age,off)-sof)/SIGMA)*100; }
 function ordinal(n){const s=Math.round(n),j=s%10,k=s%100;if(j===1&&k!==11)return s+'st';if(j===2&&k!==12)return s+'nd';if(j===3&&k!==13)return s+'rd';return s+'th';}
 function markPatientEducationOption() {
   const select = document.getElementById('eduSelect');
@@ -447,10 +422,10 @@ function renderQuality() {
 
 function redrawCharts() {
   const eduIdx = parseInt(document.getElementById('eduSelect').value, 10);
-  const off = EDU_OFFSETS[eduIdx];
-  const eduLbl = EDU_LABELS[eduIdx];
-  const sgma = sofToSGMA(SESSION.sof);
-  const pct = calcPercentile(SELECTED_PATIENT.age, SESSION.sof, off);
+  const off = NORMS.educationOffsets[eduIdx];
+  const eduLbl = NORMS.educationLabels[eduIdx];
+  const sgma = NORMS.sofToSGMA(SESSION.sof);
+  const pct = NORMS.calcPercentile(SELECTED_PATIENT.age, SESSION.sof, off);
   const band = bandName(pct);
 
   setText('scoreSubtitle', 'Session ' + (SESSION_INDEX + 1) + ' - ' + SESSION.fullDate);
@@ -487,11 +462,11 @@ function drawNormPlot(off) {
   function yOf(sgma){return PAD.top + (1-(Math.min(SG_MAX,Math.max(SG_MIN,sgma))-SG_MIN)/(SG_MAX-SG_MIN))*plotH;}
   const ages = [];
   for(let a=AGE_MIN;a<=AGE_MAX;a++) ages.push(a);
-  const p80 = ages.map(a=>sofToSGMA(sofAtPercentile(a,0.80,off)));
-  const p60 = ages.map(a=>sofToSGMA(sofAtPercentile(a,0.60,off)));
-  const p50 = ages.map(a=>sofToSGMA(sofAtPercentile(a,0.50,off)));
-  const p40 = ages.map(a=>sofToSGMA(sofAtPercentile(a,0.40,off)));
-  const p20 = ages.map(a=>sofToSGMA(sofAtPercentile(a,0.20,off)));
+  const p80 = ages.map(a=>NORMS.sofToSGMA(NORMS.sofAtPercentile(a,0.80,off)));
+  const p60 = ages.map(a=>NORMS.sofToSGMA(NORMS.sofAtPercentile(a,0.60,off)));
+  const p50 = ages.map(a=>NORMS.sofToSGMA(NORMS.sofAtPercentile(a,0.50,off)));
+  const p40 = ages.map(a=>NORMS.sofToSGMA(NORMS.sofAtPercentile(a,0.40,off)));
+  const p20 = ages.map(a=>NORMS.sofToSGMA(NORMS.sofAtPercentile(a,0.20,off)));
   const top = ages.map(()=>SG_MAX);
   const bot = ages.map(()=>SG_MIN);
   function fillBand(upper, lower, colour) {
@@ -554,7 +529,7 @@ function drawNormPlot(off) {
   ctx.font='11px system-ui,sans-serif';
   [20,30,40,50,60,70,80].forEach(a=> ctx.fillText(a, xOf(a), H-12));
   ctx.fillText('Age (years)', PAD.left + plotW/2, H-4);
-  const sgma = sofToSGMA(SESSION.sof);
+  const sgma = NORMS.sofToSGMA(SESSION.sof);
   const patX = xOf(SELECTED_PATIENT.age);
   const patY = yOf(sgma);
   ctx.beginPath(); ctx.arc(patX, patY, 10, 0, Math.PI*2);

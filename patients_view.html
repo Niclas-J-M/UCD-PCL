@@ -4,574 +4,164 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MemoryLab - Patient Results View</title>
-<link rel="icon" type="image/png" href="/image/logo_memorylab_mark.png?v=2">
-<link rel="shortcut icon" type="image/png" href="/image/logo_memorylab_mark.png?v=2">
+<link rel="icon" type="image/png" href="image/logo_memorylab_mark.png?v=2">
+<link rel="shortcut icon" type="image/png" href="image/logo_memorylab_mark.png?v=2">
 <style>
   :root {
-    --red: #BE0A1E;
-    --navy: #1A2340;
-    --navy-soft: #2B3658;
-    --bg: #EEF1F5;
-    --card: #FFFFFF;
-    --border: #E4E7EC;
-    --text: #283044;
-    --text-soft: #5D6475;
-    --text-faint: #8D95A6;
-    --blue: #4A6FA5;
-    --blue-deep: #2F5F9E;
-    --blue-soft: #EAF0F7;
-    --blue-mid: #D4E0EE;
-    --cream: #F6F2EB;
-    --shadow-lg: 0 10px 40px rgba(26,35,64,0.10);
+    --navy:#1A2340; --navy-soft:#2B3658; --bg:#EEF1F5; --card:#FFFFFF;
+    --border:#E4E7EC; --text:#283044; --text-soft:#5D6475; --text-faint:#8D95A6;
+    --blue:#4A6FA5; --blue-deep:#2F5F9E; --usual:#DCE5F0; --very-good:#DDEDE9;
+    --concern:#F6E4E1; --watch:#C77B30; --shadow-lg:0 10px 40px rgba(26,35,64,.10);
   }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    font-family: 'Segoe UI', 'Helvetica Neue', system-ui, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    -webkit-font-smoothing: antialiased;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Segoe UI','Helvetica Neue',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased;}
+  .present-bar{background:var(--navy);color:#fff;min-height:46px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;padding:8px 24px;gap:14px;flex-shrink:0;}
+  .mode-tag{justify-self:end;font-size:11px;font-weight:800;letter-spacing:.6px;background:rgba(255,255,255,.14);padding:4px 10px;border-radius:5px;white-space:nowrap;}
+  .mode-note{justify-self:center;text-align:center;font-size:12.5px;color:#AEB4C6;min-width:0;}
+  .back-btn{justify-self:start;display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.18);color:#fff;font-size:12.5px;font-weight:800;padding:7px 13px;border-radius:7px;cursor:pointer;transition:background .15s,border-color .15s;white-space:nowrap;}
+  .back-btn:hover,.back-btn:focus-visible{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.34);outline:none;}
+  .back-arrow{font-size:15px;line-height:1;}
+  .stage{flex:1;display:flex;align-items:flex-start;justify-content:center;padding:30px 22px 44px;}
+  .sheet{width:100%;max-width:980px;background:var(--card);border-radius:18px;box-shadow:var(--shadow-lg);overflow:hidden;}
+  .sheet-head{background:linear-gradient(135deg,#1A2340 0%,#2B3658 100%);color:#fff;padding:28px 40px 26px;}
+  .logo-mini{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:#B9BECE;margin-bottom:16px;}
+  .mk{width:18px;height:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .mk img{display:block;width:100%;height:100%;object-fit:contain;}
+  .sheet-head h1{font-size:30px;font-weight:750;letter-spacing:-.2px;margin-bottom:7px;}
+  .subtitle{font-size:15px;color:#C5CAD8;line-height:1.45;}
+  .sheet-body{padding:30px 40px 38px;}
+  .top-summary{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px;align-items:center;margin-bottom:24px;}
+  .context-card{border:1px solid var(--border);border-radius:14px;padding:18px 20px;background:#FBFCFD;}
+  .context-title{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.45px;color:var(--text-soft);margin-bottom:8px;}
+  .context-row{display:flex;gap:10px;flex-wrap:wrap;color:var(--navy);font-size:17px;font-weight:700;}
+  .context-pill{background:#EFF3F8;border:1px solid #DCE5F0;border-radius:999px;padding:6px 11px;}
+  .mini-score{min-width:178px;border:1px solid var(--border);border-radius:14px;padding:18px 20px;text-align:center;}
+  .mini-score .label{color:var(--text-soft);font-size:13px;margin-bottom:8px;}
+  .mini-score .value{color:var(--navy);font-size:42px;font-weight:800;line-height:1;}
+  .mini-score .sub{color:var(--text-faint);font-size:12.5px;margin-top:8px;}
+  .chart-panel{border:1px solid var(--border);border-radius:16px;background:#FBFCFD;padding:22px;}
+  .chart-top{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:14px;}
+  .chart-title h2{font-size:19px;color:var(--navy);margin-bottom:4px;}
+  .chart-title p{font-size:13.5px;line-height:1.45;color:var(--text-soft);}
+  .toggle-btn{border:1px solid var(--border);background:#fff;color:var(--text-soft);border-radius:8px;padding:8px 11px;font-size:12.5px;font-weight:800;cursor:pointer;transition:all .15s;white-space:nowrap;}
+  .toggle-btn:hover{border-color:#BFC8D5;color:var(--navy);}
+  .toggle-btn.active{background:var(--navy);border-color:var(--navy);color:#fff;}
+  .chart-wrap{position:relative;width:100%;height:350px;}
+  #patientChart{width:100%;height:100%;display:block;}
+  .chart-legend{display:flex;gap:20px;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:13px;color:var(--text-soft);font-size:12.5px;}
+  .legend-item{display:flex;align-items:center;gap:7px;}
+  .legend-line{width:24px;height:4px;border-radius:3px;background:var(--blue);}
+  .legend-band{width:24px;height:12px;border-radius:4px;background:var(--usual);}
+  .legend-dot{width:11px;height:11px;border-radius:50%;border:2px solid var(--watch);background:#fff;}
+  @media(max-width:820px){
+    .present-bar{grid-template-columns:1fr;align-items:stretch;gap:8px;}
+    .back-btn{width:100%;justify-content:center;}
+    .mode-note{text-align:left;justify-self:start;}
+    .mode-tag{justify-self:start;}
+    .stage{padding:18px 12px 30px;}
+    .sheet{border-radius:14px;}
+    .sheet-head{padding:24px 24px 22px;}
+    .sheet-head h1{font-size:25px;}
+    .sheet-body{padding:22px;}
+    .top-summary{grid-template-columns:1fr;}
+    .mini-score{text-align:left;display:grid;grid-template-columns:1fr auto;align-items:center;gap:4px 14px;}
+    .mini-score .value{grid-row:1 / span 2;grid-column:2;font-size:36px;}
+    .chart-top{flex-direction:column;}
+    .chart-wrap{height:290px;}
   }
-
-  .present-bar {
-    background: var(--navy);
-    color: #fff;
-    min-height: 46px;
-    display: flex;
-    align-items: center;
-    padding: 8px 24px;
-    gap: 14px;
-    flex-shrink: 0;
-  }
-  .mode-tag {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.6px;
-    background: rgba(255,255,255,0.14);
-    padding: 4px 10px;
-    border-radius: 5px;
-    white-space: nowrap;
-  }
-  .mode-note {
-    font-size: 12.5px;
-    color: #AEB4C6;
-  }
-  .back-btn {
-    margin-left: auto;
-    background: rgba(255,255,255,0.10);
-    border: 1px solid rgba(255,255,255,0.18);
-    color: #fff;
-    font-size: 12.5px;
-    font-weight: 600;
-    padding: 7px 14px;
-    border-radius: 7px;
-    cursor: pointer;
-    transition: background 0.15s;
-    white-space: nowrap;
-  }
-  .back-btn:hover { background: rgba(255,255,255,0.18); }
-
-  .stage {
-    flex: 1;
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    padding: 30px 22px 44px;
-  }
-  .sheet {
-    width: 100%;
-    max-width: 940px;
-    background: var(--card);
-    border-radius: 18px;
-    box-shadow: var(--shadow-lg);
-    overflow: hidden;
-  }
-
-  .sheet-head {
-    background: linear-gradient(135deg, #1A2340 0%, #2B3658 100%);
-    color: #fff;
-    padding: 28px 40px 26px;
-  }
-  .logo-mini {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    font-size: 12.5px;
-    font-weight: 600;
-    color: #B9BECE;
-    margin-bottom: 16px;
-  }
-  .mk {
-    width: 18px;
-    height: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-  .mk img { display: block; width: 100%; height: 100%; object-fit: contain; }
-  .sheet-head h1 {
-    font-size: 30px;
-    font-weight: 700;
-    letter-spacing: -0.2px;
-    margin-bottom: 7px;
-  }
-  .subtitle {
-    font-size: 15px;
-    color: #C5CAD8;
-    line-height: 1.45;
-  }
-
-  .sheet-body { padding: 30px 40px 38px; }
-
-  .top-summary {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 20px;
-    align-items: center;
-    margin-bottom: 24px;
-  }
-  .takeaway {
-    background: var(--blue-soft);
-    border: 1px solid #DCE7F3;
-    border-radius: 14px;
-    padding: 20px 24px;
-    color: var(--navy);
-    font-size: 19px;
-    line-height: 1.5;
-    font-weight: 650;
-  }
-  .takeaway .soft {
-    color: var(--blue-deep);
-    white-space: nowrap;
-  }
-  .mini-score {
-    min-width: 168px;
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 18px 20px;
-    text-align: center;
-  }
-  .mini-score .label {
-    color: var(--text-soft);
-    font-size: 13px;
-    margin-bottom: 8px;
-  }
-  .mini-score .value {
-    color: var(--navy);
-    font-size: 38px;
-    font-weight: 750;
-    line-height: 1;
-  }
-  .mini-score .sub {
-    color: var(--text-faint);
-    font-size: 12.5px;
-    margin-top: 8px;
-  }
-
-  .chart-panel {
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    background: #FBFCFD;
-    padding: 22px;
-    margin-bottom: 22px;
-  }
-  .chart-top {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 18px;
-    margin-bottom: 14px;
-  }
-  .chart-title h2 {
-    font-size: 18px;
-    color: var(--navy);
-    margin-bottom: 4px;
-  }
-  .chart-title p {
-    font-size: 13.5px;
-    line-height: 1.45;
-    color: var(--text-soft);
-  }
-  .toggles {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-  }
-  .toggle-btn {
-    border: 1px solid var(--border);
-    background: #fff;
-    color: var(--text-soft);
-    border-radius: 8px;
-    padding: 8px 11px;
-    font-size: 12.5px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-  .toggle-btn:hover { border-color: #BFC8D5; color: var(--navy); }
-  .toggle-btn.active {
-    background: var(--navy);
-    border-color: var(--navy);
-    color: #fff;
-  }
-  .chart-wrap {
-    position: relative;
-    width: 100%;
-    height: 310px;
-  }
-  #patientChart {
-    width: 100%;
-    height: 100%;
-    display: block;
-  }
-  .chart-legend {
-    display: flex;
-    gap: 22px;
-    flex-wrap: wrap;
-    border-top: 1px solid var(--border);
-    padding-top: 13px;
-    color: var(--text-soft);
-    font-size: 12.5px;
-  }
-  .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-  }
-  .legend-line {
-    width: 24px;
-    height: 4px;
-    border-radius: 3px;
-    background: linear-gradient(90deg, var(--blue), #8CAED5);
-  }
-  .legend-band {
-    width: 24px;
-    height: 12px;
-    border-radius: 4px;
-    background: var(--blue-mid);
-  }
-
-  .reassurance-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 14px;
-    margin-bottom: 22px;
-  }
-  .reassurance-card {
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 18px 18px 17px;
-    min-height: 138px;
-  }
-  .reassurance-card h3 {
-    color: var(--navy);
-    font-size: 16px;
-    margin-bottom: 9px;
-  }
-  .reassurance-card p {
-    color: var(--text-soft);
-    font-size: 14px;
-    line-height: 1.5;
-  }
-
-  .session-note {
-    background: var(--cream);
-    border-radius: 14px;
-    padding: 17px 20px;
-    color: var(--text-soft);
-    font-size: 14px;
-    line-height: 1.5;
-    display: flex;
-    gap: 14px;
-    align-items: flex-start;
-  }
-  .note-dot {
-    width: 10px;
-    height: 10px;
-    background: var(--blue);
-    border-radius: 50%;
-    margin-top: 6px;
-    flex-shrink: 0;
-    opacity: 0.75;
-  }
-
-  .term {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    color: var(--navy);
-    border-bottom: 1px dotted #8AA5C7;
-    cursor: help;
-    font-weight: 650;
-  }
-  .term::after {
-    content: attr(data-tip);
-    position: absolute;
-    left: 0;
-    bottom: calc(100% + 10px);
-    width: min(260px, 72vw);
-    padding: 10px 12px;
-    border-radius: 9px;
-    background: var(--navy);
-    color: #fff;
-    font-size: 12.5px;
-    line-height: 1.4;
-    font-weight: 500;
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(4px);
-    transition: opacity 0.15s, transform 0.15s;
-    z-index: 4;
-    box-shadow: 0 8px 26px rgba(26,35,64,0.18);
-  }
-  .term:hover::after,
-  .term:focus::after {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
-  }
-
-  @media (max-width: 820px) {
-    .present-bar {
-      align-items: flex-start;
-      flex-wrap: wrap;
-      gap: 8px 12px;
-    }
-    .back-btn {
-      margin-left: 0;
-      width: 100%;
-    }
-    .stage { padding: 18px 12px 30px; }
-    .sheet { border-radius: 14px; }
-    .sheet-head { padding: 24px 24px 22px; }
-    .sheet-head h1 { font-size: 25px; }
-    .sheet-body { padding: 22px; }
-    .top-summary {
-      grid-template-columns: 1fr;
-    }
-    .mini-score {
-      text-align: left;
-      display: grid;
-      grid-template-columns: 1fr auto;
-      align-items: center;
-      gap: 4px 14px;
-    }
-    .mini-score .value {
-      grid-row: 1 / span 2;
-      grid-column: 2;
-      font-size: 34px;
-    }
-    .chart-top {
-      flex-direction: column;
-    }
-    .toggles {
-      justify-content: flex-start;
-    }
-    .chart-wrap { height: 260px; }
-    .reassurance-grid {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  @media (max-width: 520px) {
-    .takeaway { font-size: 17px; padding: 18px; }
-    .takeaway .soft { white-space: normal; }
-    .chart-panel { padding: 16px; }
-    .chart-wrap { height: 235px; }
-    .toggle-btn { flex: 1 1 100%; }
+  @media(max-width:520px){
+    .chart-panel{padding:16px;}
+    .chart-wrap{height:250px;}
+    .toggle-btn{width:100%;}
   }
 </style>
 </head>
 <body>
 
 <div class="present-bar">
+  <button class="back-btn" id="backBtn" type="button"><span class="back-arrow" aria-hidden="true">&#8592;</span> Clinical view</button>
+  <span class="mode-note">For discussion together with the clinician</span>
   <span class="mode-tag">PATIENT VIEW</span>
-  <span class="mode-note">This is what your patient sees</span>
-  <button class="back-btn" id="backBtn">&lt; Back to clinical view</button>
 </div>
 
 <main class="stage">
   <section class="sheet" aria-label="Patient memory check-in summary">
     <header class="sheet-head">
-      <div class="logo-mini">
-        <div class="mk"><img src="image/logo_memorylab_mark.png" alt="" aria-hidden="true"></div> MemoryLab
-      </div>
+      <div class="logo-mini"><div class="mk"><img src="image/logo_memorylab_mark.png" alt="" aria-hidden="true"></div> MemoryLab</div>
       <h1 id="pageTitle">Memory check-in summary</h1>
-      <div class="subtitle" id="pageSubtitle">A simple overview to discuss together with your clinician.</div>
+      <div class="subtitle" id="pageSubtitle">SGMA score compared with people of a similar age and education level.</div>
     </header>
 
     <div class="sheet-body">
       <section class="top-summary" aria-label="Main result">
-        <div class="takeaway" id="takeawayText">
-          Your latest check-in is ready to review together.
+        <div class="context-card">
+          <div class="context-title">Comparison group</div>
+          <div class="context-row">
+            <span class="context-pill" id="agePill">Age --</span>
+            <span class="context-pill" id="eduPill">Education</span>
+            <span class="context-pill" id="sessionPill">Good-quality check-ins</span>
+          </div>
         </div>
         <div class="mini-score">
-          <div class="label">
-            Latest <span class="term" tabindex="0" data-tip="A summary number from the memory check-in.">score</span>
-          </div>
+          <div class="label">Latest SGMA score</div>
           <div class="value" id="latestScore">--</div>
-          <div class="sub" id="scoreSub">Latest session</div>
+          <div class="sub" id="scoreSub">Latest check-in</div>
         </div>
       </section>
 
-      <section class="chart-panel" aria-label="Memory check-in graph">
+      <section class="chart-panel" aria-label="SGMA score graph">
         <div class="chart-top">
           <div class="chart-title">
-            <h2 id="chartHeading">Memory over time</h2>
-            <p id="chartDescription">Each dot is one check-in. Small changes from session to session are normal.</p>
+            <h2>SGMA score over time</h2>
+            <p id="chartDescription">Low-quality check-ins are hidden.</p>
           </div>
-          <div class="toggles" aria-label="Choose graph">
-            <button class="toggle-btn active" type="button" data-mode="memory">Memory trend</button>
-            <button class="toggle-btn" type="button" data-mode="quality">Session quality</button>
-            <button class="toggle-btn" type="button" data-mode="forgetting">Forgetting speed</button>
-          </div>
+          <button class="toggle-btn" id="qualityToggle" type="button" aria-pressed="false">Show all check-ins</button>
         </div>
         <div class="chart-wrap">
-          <canvas id="patientChart" aria-label="Selected patient graph"></canvas>
+          <canvas id="patientChart" aria-label="SGMA score over time"></canvas>
         </div>
         <div class="chart-legend">
-          <div class="legend-item"><span class="legend-line"></span> Your check-ins</div>
-          <div class="legend-item"><span class="legend-band"></span> Usual range for comparison</div>
-        </div>
-      </section>
-
-      <section class="reassurance-grid" aria-label="Important reminders">
-        <article class="reassurance-card">
-          <h3>Scores can vary</h3>
-          <p>Tiredness, stress, concentration, or an <span class="term" tabindex="0" data-tip="A break or pause during the session that can affect the result.">interruption</span> can change one session.</p>
-        </article>
-        <article class="reassurance-card">
-          <h3>Not a diagnosis</h3>
-          <p>This check-in does not by itself mean dementia or a serious condition.</p>
-        </article>
-        <article class="reassurance-card">
-          <h3>Your doctor adds context</h3>
-          <p>Your clinician can interpret this with your symptoms, history, and daily life.</p>
-        </article>
-      </section>
-
-      <section class="session-note" aria-label="Session note">
-        <div class="note-dot" aria-hidden="true"></div>
-        <div id="sessionNote">
-          A <span class="term" tabindex="0" data-tip="How this compares with people of a similar age and education level.">percentile</span> only helps compare groups. Your clinician will explain what it means for you.
+          <div class="legend-item"><span class="legend-line"></span> SGMA score</div>
+          <div class="legend-item"><span class="legend-band"></span> Usual range</div>
+          <div class="legend-item" id="cautionLegend" style="display:none;"><span class="legend-dot"></span> Lower reliability</div>
         </div>
       </section>
     </div>
   </section>
 </main>
 
-<script src="mock-data.js"></script>
+<script src="data/schema.js"></script>
+<script src="data/patients.js"></script>
+<script src="data/sessions.js"></script>
+<script src="data/events.js"></script>
+<script src="data/notes.js"></script>
+<script src="data/index.js"></script>
+<script src="ui/helpers.js"></script>
+<script src="ui/sgma-norms.js"></script>
 <script>
 const ML = window.MemoryLabData;
+const UI = window.MemoryLabUI;
+const NORMS = window.MemoryLabNorms;
 const PATIENT = ML.getPatientFromUrl();
-const GRAPH = {
-  mode: 'memory',
-  canvas: null,
-  ctx: null,
-};
+const EDUCATION = ML.educationFor(PATIENT.educationCode);
+const ALL_SESSIONS = ML.sessionsForPatient(PATIENT.id);
+let showAllCheckins = false;
+let GRAPH = { canvas: null, ctx: null };
 
-function firstName(patient) {
-  return patient.name.split(' ')[0];
+function visibleSessions() {
+  const good = ALL_SESSIONS.filter(session => session.quality !== 'caution');
+  if (showAllCheckins || !good.length) return ALL_SESSIONS;
+  return good;
 }
 
-function latestScore(patient) {
-  return Math.round(ML.sofToSGMA(ML.latestSession(patient).sof));
+function parseSessionDate(session) {
+  if (session.dateObj instanceof Date) return session.dateObj;
+  const parsed = new Date(session.fullDate);
+  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
 }
 
-function simplePercentile(patient) {
-  const score = latestScore(patient);
-  return Math.max(3, Math.min(97, Math.round(((score - 30) / 140) * 100)));
-}
-
-function interruptedCount(patient) {
-  return patient.sessions.filter(session => session.interruptions > 0).length;
-}
-
-function comparisonPhrase(percentile) {
-  if (percentile < 40) return 'slightly lower than expected';
-  if (percentile > 75) return 'higher than expected';
-  return 'within the expected range';
-}
-
-function trendTakeaway(patient) {
-  const percentile = simplePercentile(patient);
-  const comparison = comparisonPhrase(percentile);
-  const latest = ML.latestSession(patient);
-  const name = firstName(patient);
-
-  if (patient.trend === 'new') {
-    return name + "'s results are still building a baseline. A few more check-ins will make the pattern easier to understand.";
-  }
-
-  if (patient.trend === 'stable') {
-    return name + "'s memory score has stayed fairly steady, with normal small changes between sessions.";
-  }
-
-  if (latest.interruptions > 0) {
-    return name + "'s latest memory score was " + comparison + " for people of a similar age and education level, and the session had a pause. It is best discussed together.";
-  }
-
-  return name + "'s latest memory score was " + comparison + " for people of a similar age and education level. This is something to look at together, not a cause for alarm.";
-}
-
-function sessionNoteHtml(patient) {
-  const latest = ML.latestSession(patient);
-  const percentile = simplePercentile(patient);
-  const terms = {
-    percentile: '<span class="term" tabindex="0" data-tip="How this compares with people of a similar age and education level.">percentile</span>',
-    interruption: '<span class="term" tabindex="0" data-tip="A break or pause during the session that can affect the result.">interruption</span>',
-    speed: '<span class="term" tabindex="0" data-tip="How quickly remembered information faded during the check-in.">speed of forgetting</span>',
-  };
-
-  if (latest.interruptions > 0) {
-    return 'The latest session included an ' + terms.interruption + '. Scores can vary because of tiredness, stress, concentration, or pauses during the check-in.';
-  }
-
-  return 'This result is around the ' + percentile + 'th ' + terms.percentile + '. The ' + terms.speed + ' is one part of the picture, and your clinician will interpret it with you.';
-}
-
-function graphConfig(mode) {
-  if (mode === 'quality') {
-    return {
-      heading: 'Session quality',
-      description: 'This shows whether the check-ins were smooth enough to interpret comfortably.',
-      topLabel: 'Smoother',
-      bottomLabel: 'Less smooth',
-      band: [62, 88],
-      values: PATIENT.sessions.map(session => {
-        const interruptionPenalty = session.interruptions * 22;
-        const pacePenalty = Math.max(0, session.nonRetrievalTime - 3) * 6;
-        return Math.max(28, Math.min(96, 94 - interruptionPenalty - pacePenalty));
-      }),
-    };
-  }
-
-  if (mode === 'forgetting') {
-    return {
-      heading: 'Forgetting speed',
-      description: 'This gives a simple view of the speed of forgetting. Lower stress and better focus can affect it.',
-      topLabel: 'Slower',
-      bottomLabel: 'Faster',
-      band: [44, 72],
-      values: PATIENT.sessions.map(session => Math.max(10, Math.min(95, 100 - (session.sof * 150)))),
-    };
-  }
-
-  return {
-    heading: 'Memory over time',
-    description: 'Each dot is one check-in. Small changes from session to session are normal.',
-    topLabel: 'Higher',
-    bottomLabel: 'Lower',
-    band: [42, 72],
-    values: PATIENT.sessions.map(session => ML.sofToSGMA(session.sof)),
-  };
+function sessionSgma(session) {
+  return NORMS.sofToSGMA(session.sof);
 }
 
 function fitCanvasToDisplay(canvas) {
@@ -586,163 +176,158 @@ function fitCanvasToDisplay(canvas) {
   return { width, height, ratio };
 }
 
+function monthTicks(start, end) {
+  const ticks = [];
+  const cursor = new Date(start.getFullYear(), start.getMonth(), 1);
+  if (cursor < start) cursor.setMonth(cursor.getMonth() + 1);
+  ticks.push(new Date(start));
+  while (cursor <= end) {
+    ticks.push(new Date(cursor));
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+  if (ticks[ticks.length - 1].getMonth() !== end.getMonth() || ticks[ticks.length - 1].getFullYear() !== end.getFullYear()) {
+    ticks.push(new Date(end));
+  }
+  return ticks;
+}
+
 function drawChart() {
   const canvas = GRAPH.canvas;
   const ctx = GRAPH.ctx;
-  const cfg = graphConfig(GRAPH.mode);
+  const sessions = visibleSessions();
+  const allDates = ALL_SESSIONS.map(parseSessionDate);
+  const startDate = new Date(Math.min(...allDates));
+  const endDate = new Date(Math.max(...allDates));
+  const span = Math.max(1, endDate - startDate);
   const { width, height, ratio } = fitCanvasToDisplay(canvas);
-  const pad = {
-    left: 64 * ratio,
-    right: 34 * ratio,
-    top: 34 * ratio,
-    bottom: 48 * ratio,
-  };
+  const pad = { left: 70 * ratio, right: 28 * ratio, top: 30 * ratio, bottom: 52 * ratio };
   const plotW = width - pad.left - pad.right;
   const plotH = height - pad.top - pad.bottom;
-  const values = cfg.values;
-  const min = Math.min(...values, cfg.band[0]);
-  const max = Math.max(...values, cfg.band[1]);
-  const rangePad = Math.max(8, (max - min) * 0.28);
-  const yMin = min - rangePad;
-  const yMax = max + rangePad;
-  const xOf = index => values.length === 1 ? pad.left + plotW : pad.left + (index / (values.length - 1)) * plotW;
-  const yOf = value => pad.top + (1 - ((value - yMin) / (yMax - yMin))) * plotH;
+  const yMin = 30;
+  const yMax = 170;
+  const bands = NORMS.comparisonBands(PATIENT, EDUCATION);
+  const xOf = date => pad.left + ((date - startDate) / span) * plotW;
+  const yOf = sgma => pad.top + (1 - ((Math.min(yMax, Math.max(yMin, sgma)) - yMin) / (yMax - yMin))) * plotH;
+  const highY = yOf(bands.high);
+  const lowY = yOf(bands.low);
 
   ctx.clearRect(0, 0, width, height);
   ctx.fillStyle = '#FBFCFD';
   ctx.fillRect(0, 0, width, height);
 
-  const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + plotH);
-  grad.addColorStop(0, 'rgba(74,111,165,0.23)');
-  grad.addColorStop(1, 'rgba(212,224,238,0.35)');
-  const bandTop = yOf(cfg.band[1]);
-  const bandBottom = yOf(cfg.band[0]);
-  ctx.fillStyle = grad;
-  ctx.fillRect(pad.left, bandTop, plotW, bandBottom - bandTop);
+  ctx.fillStyle = '#DDEDE9';
+  ctx.fillRect(pad.left, pad.top, plotW, Math.max(0, highY - pad.top));
+  ctx.fillStyle = '#DCE5F0';
+  ctx.fillRect(pad.left, highY, plotW, Math.max(0, lowY - highY));
+  ctx.fillStyle = '#F6E4E1';
+  ctx.fillRect(pad.left, lowY, plotW, Math.max(0, pad.top + plotH - lowY));
 
-  ctx.strokeStyle = '#E7EBF1';
+  ctx.strokeStyle = '#E1E6ED';
   ctx.lineWidth = 1 * ratio;
-  [0.2, 0.5, 0.8].forEach(frac => {
-    const y = pad.top + plotH * frac;
+  [50, 80, 110, 140, 170].forEach(score => {
+    const y = yOf(score);
     ctx.beginPath();
     ctx.moveTo(pad.left, y);
     ctx.lineTo(pad.left + plotW, y);
     ctx.stroke();
   });
 
-  ctx.fillStyle = '#8892A3';
-  ctx.font = `${12 * ratio}px Segoe UI, sans-serif`;
-  ctx.textAlign = 'right';
-  ctx.fillText(cfg.topLabel, pad.left - 12 * ratio, pad.top + 10 * ratio);
-  ctx.fillText(cfg.bottomLabel, pad.left - 12 * ratio, pad.top + plotH);
-
-  ctx.fillStyle = '#4A6FA5';
-  ctx.font = `600 ${12 * ratio}px Segoe UI, sans-serif`;
-  ctx.textAlign = 'left';
-  ctx.fillText('Usual comparison range', pad.left + 10 * ratio, bandTop - 8 * ratio);
-
-  ctx.strokeStyle = '#CAD4E2';
-  ctx.lineWidth = 1.5 * ratio;
-  ctx.beginPath();
-  ctx.moveTo(pad.left, pad.top + plotH);
-  ctx.lineTo(pad.left + plotW, pad.top + plotH);
-  ctx.stroke();
-
-  const area = ctx.createLinearGradient(0, pad.top, 0, pad.top + plotH);
-  area.addColorStop(0, 'rgba(74,111,165,0.20)');
-  area.addColorStop(1, 'rgba(74,111,165,0.02)');
-  ctx.beginPath();
-  values.forEach((value, index) => {
-    const x = xOf(index);
-    const y = yOf(value);
-    if (index === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-  });
-  ctx.lineTo(xOf(values.length - 1), pad.top + plotH);
-  ctx.lineTo(xOf(0), pad.top + plotH);
-  ctx.closePath();
-  ctx.fillStyle = area;
-  ctx.fill();
-
-  const line = ctx.createLinearGradient(pad.left, 0, pad.left + plotW, 0);
-  line.addColorStop(0, '#4A6FA5');
-  line.addColorStop(1, '#8CAED5');
-  ctx.strokeStyle = line;
-  ctx.lineWidth = 4 * ratio;
-  ctx.lineJoin = 'round';
-  ctx.lineCap = 'round';
-  ctx.beginPath();
-  values.forEach((value, index) => {
-    const x = xOf(index);
-    const y = yOf(value);
-    if (index === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-  });
-  ctx.stroke();
-
-  values.forEach((value, index) => {
-    const latest = index === values.length - 1;
-    const x = xOf(index);
-    const y = yOf(value);
-    ctx.beginPath();
-    ctx.arc(x, y, latest ? 7 * ratio : 4.5 * ratio, 0, Math.PI * 2);
-    ctx.fillStyle = latest ? '#2F5F9E' : '#6F92BF';
-    ctx.fill();
-    ctx.lineWidth = latest ? 3 * ratio : 0;
-    ctx.strokeStyle = '#fff';
-    if (latest) ctx.stroke();
-  });
-
-  const latestX = xOf(values.length - 1);
-  const latestY = yOf(values[values.length - 1]);
-  ctx.fillStyle = '#1A2340';
+  ctx.fillStyle = '#5D6475';
   ctx.font = `700 ${12 * ratio}px Segoe UI, sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.fillText('Latest', latestX, Math.max(pad.top + 12 * ratio, latestY - 16 * ratio));
+  ctx.textAlign = 'left';
+  ctx.fillText('Very good', pad.left + 10 * ratio, pad.top + 18 * ratio);
+  ctx.fillText('Usual range', pad.left + 10 * ratio, highY + Math.max(18 * ratio, (lowY - highY) / 2));
+  ctx.fillText('Concerning', pad.left + 10 * ratio, pad.top + plotH - 12 * ratio);
 
-  const labelIndexes = [0, Math.floor((values.length - 1) / 2), values.length - 1];
   ctx.fillStyle = '#8D95A6';
   ctx.font = `${12 * ratio}px Segoe UI, sans-serif`;
-  labelIndexes.forEach(index => {
-    const session = PATIENT.sessions[index];
-    if (!session) return;
-    ctx.fillText(session.date, xOf(index), pad.top + plotH + 28 * ratio);
+  ctx.textAlign = 'right';
+  [50, 80, 110, 140, 170].forEach(score => ctx.fillText(String(score), pad.left - 12 * ratio, yOf(score) + 4 * ratio));
+
+  const ticks = monthTicks(startDate, endDate);
+  ctx.textAlign = 'center';
+  ticks.forEach(tick => {
+    const x = xOf(tick);
+    ctx.strokeStyle = '#EDF0F4';
+    ctx.beginPath();
+    ctx.moveTo(x, pad.top);
+    ctx.lineTo(x, pad.top + plotH);
+    ctx.stroke();
+    ctx.fillStyle = '#8D95A6';
+    ctx.fillText(tick.toLocaleDateString('en-GB', { month: 'short' }), x, pad.top + plotH + 30 * ratio);
   });
 
-  document.getElementById('chartHeading').textContent = cfg.heading;
-  document.getElementById('chartDescription').textContent = cfg.description;
-}
+  const goodPoints = sessions.filter(session => session.quality !== 'caution');
+  if (goodPoints.length) {
+    ctx.strokeStyle = '#4A6FA5';
+    ctx.lineWidth = 4 * ratio;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    goodPoints.forEach((session, index) => {
+      const x = xOf(parseSessionDate(session));
+      const y = yOf(sessionSgma(session));
+      if (index === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  }
 
-function setMode(mode) {
-  GRAPH.mode = mode;
-  document.querySelectorAll('.toggle-btn').forEach(button => {
-    button.classList.toggle('active', button.dataset.mode === mode);
+  sessions.forEach(session => {
+    const x = xOf(parseSessionDate(session));
+    const y = yOf(sessionSgma(session));
+    const caution = session.quality === 'caution';
+    ctx.beginPath();
+    ctx.arc(x, y, caution ? 6 * ratio : 5 * ratio, 0, Math.PI * 2);
+    ctx.fillStyle = caution ? '#fff' : '#4A6FA5';
+    ctx.fill();
+    ctx.lineWidth = caution ? 2.5 * ratio : 2 * ratio;
+    ctx.strokeStyle = caution ? '#C77B30' : '#fff';
+    ctx.stroke();
   });
-  drawChart();
+
+  if (sessions.length) {
+    const latest = sessions[sessions.length - 1];
+    const x = xOf(parseSessionDate(latest));
+    const y = yOf(sessionSgma(latest));
+    ctx.fillStyle = '#1A2340';
+    ctx.font = `700 ${12 * ratio}px Segoe UI, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('Latest', x, Math.max(pad.top + 14 * ratio, y - 16 * ratio));
+  }
 }
 
 function renderPage() {
-  const latest = ML.latestSession(PATIENT);
-  const education = ML.educationFor(PATIENT.educationCode);
-  const score = latestScore(PATIENT);
-  const percentile = simplePercentile(PATIENT);
-
-  document.getElementById('pageTitle').textContent = firstName(PATIENT) + "'s memory check-in summary";
-  document.getElementById('pageSubtitle').textContent = 'Latest session: ' + latest.fullDate + ' - compared with people of a similar age and education level.';
-  document.getElementById('takeawayText').innerHTML = trendTakeaway(PATIENT).replace('not a cause for alarm', '<span class="soft">not a cause for alarm</span>');
-  document.getElementById('latestScore').textContent = score;
-  document.getElementById('scoreSub').textContent = comparisonPhrase(percentile) + ' - ' + education.label.toLowerCase();
-  document.getElementById('sessionNote').innerHTML = sessionNoteHtml(PATIENT);
+  const sessions = visibleSessions();
+  const latest = sessions[sessions.length - 1] || ALL_SESSIONS[ALL_SESSIONS.length - 1];
+  const hiddenCount = ALL_SESSIONS.filter(session => session.quality === 'caution').length;
+  document.getElementById('pageTitle').textContent = PATIENT.name.split(' ')[0] + "'s memory check-in summary";
+  document.getElementById('pageSubtitle').textContent = 'SGMA score compared with people of a similar age and education level.';
+  document.getElementById('agePill').textContent = 'Age ' + PATIENT.age;
+  document.getElementById('eduPill').textContent = EDUCATION.label;
+  document.getElementById('sessionPill').textContent = sessions.length + ' check-ins shown';
+  document.getElementById('latestScore').textContent = latest ? Math.round(sessionSgma(latest)) : '--';
+  document.getElementById('scoreSub').textContent = latest ? latest.fullDate : 'No check-ins';
+  document.getElementById('chartDescription').textContent = showAllCheckins || !hiddenCount
+    ? 'All check-ins are shown.'
+    : hiddenCount + ' lower-reliability check-in' + (hiddenCount === 1 ? ' is' : 's are') + ' hidden.';
+  document.getElementById('cautionLegend').style.display = showAllCheckins && hiddenCount ? '' : 'none';
+  const toggle = document.getElementById('qualityToggle');
+  toggle.classList.toggle('active', showAllCheckins);
+  toggle.setAttribute('aria-pressed', String(showAllCheckins));
+  toggle.textContent = showAllCheckins ? 'Hide low-quality check-ins' : 'Show all check-ins';
   document.getElementById('backBtn').onclick = () => {
-    window.location.href = 'patient_profile.html?patient=' + encodeURIComponent(PATIENT.id);
+    window.location.href = UI.patientProfileUrl(PATIENT);
   };
 }
 
 function setupGraph() {
   GRAPH.canvas = document.getElementById('patientChart');
   GRAPH.ctx = GRAPH.canvas.getContext('2d');
-  document.querySelectorAll('.toggle-btn').forEach(button => {
-    button.addEventListener('click', () => setMode(button.dataset.mode));
+  document.getElementById('qualityToggle').addEventListener('click', () => {
+    showAllCheckins = !showAllCheckins;
+    renderPage();
+    drawChart();
   });
   window.addEventListener('resize', drawChart);
   drawChart();
