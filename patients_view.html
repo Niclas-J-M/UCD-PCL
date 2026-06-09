@@ -176,19 +176,8 @@ function fitCanvasToDisplay(canvas) {
   return { width, height, ratio };
 }
 
-function monthTicks(start, end) {
-  const ticks = [];
-  const cursor = new Date(start.getFullYear(), start.getMonth(), 1);
-  if (cursor < start) cursor.setMonth(cursor.getMonth() + 1);
-  ticks.push(new Date(start));
-  while (cursor <= end) {
-    ticks.push(new Date(cursor));
-    cursor.setMonth(cursor.getMonth() + 1);
-  }
-  if (ticks[ticks.length - 1].getMonth() !== end.getMonth() || ticks[ticks.length - 1].getFullYear() !== end.getFullYear()) {
-    ticks.push(new Date(end));
-  }
-  return ticks;
+function monthDiff(start, end) {
+  return (end.getFullYear() - start.getFullYear()) * 12 + end.getMonth() - start.getMonth();
 }
 
 function drawChart() {
@@ -196,9 +185,11 @@ function drawChart() {
   const ctx = GRAPH.ctx;
   const sessions = visibleSessions();
   const allDates = ALL_SESSIONS.map(parseSessionDate);
-  const startDate = new Date(Math.min(...allDates));
-  const endDate = new Date(Math.max(...allDates));
-  const span = Math.max(1, endDate - startDate);
+  const firstDate = allDates[0] || new Date();
+  const lastDate = allDates[allDates.length - 1] || firstDate;
+  const axisStart = new Date(firstDate.getFullYear(), firstDate.getMonth(), 1);
+  const axisEnd = new Date(lastDate.getFullYear(), lastDate.getMonth() + 1, 1);
+  const totalMonths = Math.max(1, monthDiff(axisStart, axisEnd));
   const { width, height, ratio } = fitCanvasToDisplay(canvas);
   const pad = { left: 70 * ratio, right: 28 * ratio, top: 30 * ratio, bottom: 52 * ratio };
   const plotW = width - pad.left - pad.right;
@@ -206,7 +197,12 @@ function drawChart() {
   const yMin = 30;
   const yMax = 170;
   const bands = NORMS.comparisonBands(PATIENT, EDUCATION);
-  const xOf = date => pad.left + ((date - startDate) / span) * plotW;
+  const xOf = date => {
+    const months = monthDiff(axisStart, new Date(date.getFullYear(), date.getMonth(), 1));
+    const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+    const monthFrac = Math.max(0, Math.min(1, (date.getDate() - 1) / daysInMonth));
+    return pad.left + ((months + monthFrac) / totalMonths) * plotW;
+  };
   const yOf = sgma => pad.top + (1 - ((Math.min(yMax, Math.max(yMin, sgma)) - yMin) / (yMax - yMin))) * plotH;
   const highY = yOf(bands.high);
   const lowY = yOf(bands.low);
@@ -244,18 +240,19 @@ function drawChart() {
   ctx.textAlign = 'right';
   [50, 80, 110, 140, 170].forEach(score => ctx.fillText(String(score), pad.left - 12 * ratio, yOf(score) + 4 * ratio));
 
-  const ticks = monthTicks(startDate, endDate);
   ctx.textAlign = 'center';
-  ticks.forEach(tick => {
-    const x = xOf(tick);
+  for (let i = 0; i < totalMonths; i++) {
+    const tickDate = new Date(axisStart.getFullYear(), axisStart.getMonth() + i, 1);
+    const x = pad.left + ((i + 0.5) / totalMonths) * plotW;
+    const gridX = pad.left + (i / totalMonths) * plotW;
     ctx.strokeStyle = '#EDF0F4';
     ctx.beginPath();
-    ctx.moveTo(x, pad.top);
-    ctx.lineTo(x, pad.top + plotH);
+    ctx.moveTo(gridX, pad.top);
+    ctx.lineTo(gridX, pad.top + plotH);
     ctx.stroke();
     ctx.fillStyle = '#8D95A6';
-    ctx.fillText(tick.toLocaleDateString('en-GB', { month: 'short' }), x, pad.top + plotH + 30 * ratio);
-  });
+    ctx.fillText(tickDate.toLocaleDateString('en-GB', { month: 'short' }), x, pad.top + plotH + 30 * ratio);
+  }
 
   const goodPoints = sessions.filter(session => session.quality !== 'caution');
   if (goodPoints.length) {
