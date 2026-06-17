@@ -70,9 +70,26 @@
     .chart-wrap{height:290px;}
   }
   @media(max-width:520px){
-    .chart-panel{padding:16px;}
-    .chart-wrap{height:250px;}
+    body{overflow-x:hidden;}
+    .present-bar{padding:10px 12px;}
+    .stage{display:block;padding:12px 8px 24px;overflow:hidden;}
+    .sheet{width:calc(100vw - 16px);max-width:calc(100vw - 16px);border-radius:12px;min-width:0;}
+    .sheet-head,.sheet-body{max-width:100%;min-width:0;}
+    .sheet-head{padding:20px 18px;}
+    .logo-mini{margin-bottom:12px;}
+    .sheet-head h1{font-size:22px;line-height:1.18;overflow-wrap:anywhere;}
+    .subtitle{font-size:13.5px;overflow-wrap:anywhere;}
+    .sheet-body{padding:16px;}
+    .context-card,.mini-score{padding:14px;}
+    .context-row{gap:7px;font-size:14px;}
+    .context-pill{max-width:100%;padding:5px 9px;overflow-wrap:anywhere;}
+    .mini-score{display:block;text-align:left;}
+    .mini-score .value{display:block;font-size:32px;margin-top:6px;}
+    .chart-panel{padding:14px;border-radius:12px;min-width:0;overflow:hidden;}
+    .chart-title h2{font-size:17px;}
+    .chart-wrap{height:260px;min-width:0;}
     .toggle-btn{width:100%;}
+    .chart-legend{gap:10px 14px;font-size:12px;}
   }
 </style>
 </head>
@@ -191,7 +208,10 @@ function drawChart() {
   const axisEnd = new Date(lastDate.getFullYear(), lastDate.getMonth() + 1, 1);
   const totalMonths = Math.max(1, monthDiff(axisStart, axisEnd));
   const { width, height, ratio } = fitCanvasToDisplay(canvas);
-  const pad = { left: 70 * ratio, right: 28 * ratio, top: 30 * ratio, bottom: 52 * ratio };
+  const compact = canvas.getBoundingClientRect().width < 520;
+  const pad = compact
+    ? { left: 44 * ratio, right: 16 * ratio, top: 28 * ratio, bottom: 44 * ratio }
+    : { left: 70 * ratio, right: 28 * ratio, top: 30 * ratio, bottom: 52 * ratio };
   const plotW = width - pad.left - pad.right;
   const plotH = height - pad.top - pad.bottom;
   const yMin = 30;
@@ -286,10 +306,11 @@ function drawChart() {
     const latest = sessions[sessions.length - 1];
     const x = xOf(parseSessionDate(latest));
     const y = yOf(sessionSgma(latest));
+    const labelX = Math.min(width - 26 * ratio, Math.max(pad.left + 26 * ratio, x));
     ctx.fillStyle = '#1A2340';
     ctx.font = `700 ${12 * ratio}px Segoe UI, sans-serif`;
     ctx.textAlign = 'center';
-    ctx.fillText('Latest', x, Math.max(pad.top + 14 * ratio, y - 16 * ratio));
+    ctx.fillText('Latest', labelX, Math.max(pad.top + 14 * ratio, y - 16 * ratio));
   }
 }
 

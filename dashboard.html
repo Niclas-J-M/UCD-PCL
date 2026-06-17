@@ -517,10 +517,51 @@
     width: 4px; height: 14px; border-radius: 2px; background: var(--navy);
   }
   .legend .mk.el { background: var(--red); }
+  @media (max-width:860px) {
+    .topbar{
+      height:auto;
+      min-height:56px;
+      padding:10px 16px;
+      gap:10px 14px;
+      flex-wrap:wrap;
+    }
+    .logo{flex:1 1 auto;}
+    .nav{
+      order:3;
+      width:100%;
+      margin-left:0;
+      flex-wrap:wrap;
+      padding-top:2px;
+    }
+    .nav a{white-space:nowrap;}
+    .topbar-right{margin-left:0;}
+    .page{padding:20px 14px 34px;}
+    .page-head{align-items:flex-start;flex-direction:column;}
+    .btn-primary{width:100%;justify-content:center;}
+    .summary{grid-template-columns:1fr;gap:12px;margin-bottom:18px;}
+    .stat{padding:15px 17px;}
+    .main-grid{grid-template-columns:1fr;gap:18px;}
+    .patient-grid{grid-template-columns:1fr;padding:14px;}
+    .patient-grid-foot{align-items:stretch;flex-direction:column;}
+    .patient-link{width:100%;}
+    .pc-badges{align-items:flex-start;flex-direction:row;flex-wrap:wrap;margin-top:8px;}
+    .pc-top,.pc-foot{align-items:flex-start;flex-direction:column;gap:8px;}
+    .legend{gap:10px 16px;padding:12px 14px;}
+  }
   @media (max-width:700px) {
     .main-grid > .panel > .panel-head .filter-dropdown{width:100%;margin-left:0;}
     .main-grid > .panel > .panel-head .filter-button{width:100%;}
     .main-grid > .panel > .panel-head .filter-menu{left:0;right:0;min-width:0;}
+  }
+  @media (max-width:560px) {
+    .topbar{align-items:flex-start;}
+    .topbar-right{width:100%;}
+    .logo span{display:none;}
+    .nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;}
+    .nav a{min-width:0;text-align:center;padding:7px 8px;overflow:hidden;text-overflow:ellipsis;white-space:normal;}
+    .panel-head{align-items:flex-start;flex-direction:column;}
+    .patients-heading{align-items:flex-start;flex-direction:column;gap:2px;}
+    .schedule-item,.reminder-item{padding-left:14px;padding-right:14px;}
   }
 </style>
 </head>

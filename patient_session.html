@@ -106,8 +106,23 @@
   .interpretation{margin-top:16px;padding:14px 16px;background:var(--bg);border-radius:9px;border-left:3px solid var(--navy);font-size:13px;color:var(--text);line-height:1.55;}
   .interpretation b{color:var(--navy);}
   @media (max-width:860px){
-    .topbar{padding:0 16px;gap:14px;}
-    .nav{display:none;}
+    .topbar{
+      height:auto;
+      min-height:56px;
+      padding:10px 16px;
+      gap:10px 14px;
+      flex-wrap:wrap;
+    }
+    .logo{flex:1 1 auto;}
+    .nav{
+      order:3;
+      width:100%;
+      margin-left:0;
+      flex-wrap:wrap;
+      padding-top:2px;
+    }
+    .nav a{white-space:nowrap;}
+    .topbar-right{margin-left:0;}
     .page{padding:18px 14px 34px;}
     .patient-header{align-items:flex-start;flex-wrap:wrap;padding:18px;}
     .session-actions{width:100%;}
@@ -116,9 +131,23 @@
     .edu-selector{align-items:stretch;flex-direction:column;}
   }
   @media (max-width:560px){
+    .topbar{align-items:flex-start;}
+    .topbar-right{width:100%;}
+    .logo span{display:none;}
+    .nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;}
+    .nav a{min-width:0;text-align:center;padding:7px 8px;overflow:hidden;text-overflow:ellipsis;white-space:normal;}
+    .page{padding:16px 12px 30px;}
+    .patient-header{gap:14px;padding:16px;}
+    .patient-avatar{width:50px;height:50px;font-size:18px;border-radius:12px;}
+    .ph-main h1{font-size:20px;}
     .quality-metrics,.score-triple{grid-template-columns:1fr;}
     .panel-head{align-items:flex-start;flex-direction:column;}
     .panel-head .subtitle{margin-left:0;}
+    .panel-body{padding:16px;}
+    .quality-banner{align-items:flex-start;}
+    .tip-box{left:auto;right:0;transform:none;width:min(220px,calc(100vw - 42px));}
+    .tip-box::after{left:auto;right:12px;transform:none;}
+    .band-legend{gap:9px 12px;}
   }
 </style>
 </head>
