@@ -149,7 +149,7 @@ window.MemoryLabData = (() => {
     const lowScore = latestSgma < 60;
     const needsReview = trend === 'declining' || qualityConcern || lowScore;
     const badges = [];
-    if (needsReview) badges.push({ type: qualityConcern ? 'quality' : 'review', label: qualityConcern ? 'Check quality' : 'Needs review', filter: 'review' });
+    if (needsReview) badges.push({ type: qualityConcern ? 'quality' : 'review', label: 'Needs review', filter: 'review' });
     if (newSession) badges.push({ type: 'new-session', label: 'New session', filter: 'new-session' });
     if (trend === 'new') badges.push({ type: 'new', label: 'New baseline', filter: 'new' });
     return {
