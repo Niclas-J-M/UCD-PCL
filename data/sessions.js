@@ -94,7 +94,7 @@ window.MemoryLabSessions = (() => {
       { date: '2026-03-24', sof: 0.40, trials: 39, nonRetrievalTime: 3.5, duration: '8:21' },
       { date: '2026-05-14', sof: 0.41, trials: 39, nonRetrievalTime: 3.7, duration: '8:19' },
       { date: '2026-05-29', sof: 0.41, trials: 38, nonRetrievalTime: 3.8, duration: '8:24' },
-      { date: '2026-06-11', sof: 0.42, trials: 38, nonRetrievalTime: 3.9, duration: '8:28' },
+      { date: '2026-06-11', sof: 0.48, trials: 36, nonRetrievalTime: 4.6, duration: '8:36' },
     ]),
     ...sessionSeries('lia-verhoeven', [
       { date: '2026-01-20', sof: 0.38, trials: 40, nonRetrievalTime: 3.2, duration: '8:10' },
