@@ -174,8 +174,8 @@
     margin-top: 6px;
   }
   .stat.s-flag .value { color: var(--red); }
-  .stat.s-flag.actionable{cursor:pointer;transition:transform .15s,border-color .15s,box-shadow .15s;}
-  .stat.s-flag.actionable:hover,.stat.s-flag.actionable:focus-visible{transform:translateY(-1px);border-color:#D8A2AA;box-shadow:0 5px 16px rgba(190,10,30,.12);outline:none;}
+  .stat.actionable{cursor:pointer;transition:transform .15s,border-color .15s,box-shadow .15s;}
+  .stat.actionable:hover,.stat.actionable:focus-visible{transform:translateY(-1px);border-color:#D8A2AA;box-shadow:0 5px 16px rgba(190,10,30,.12);outline:none;}
 
   /* ─── Main grid layout ───────────────────────────────────── */
   .main-grid {
@@ -563,15 +563,15 @@
 
   <!-- ─── Summary strip ────────────────────────────────────── -->
   <div class="summary">
-    <div class="stat s-total">
+    <div class="stat s-total actionable" id="activePatientsShortcut" role="button" tabindex="0" aria-label="Open full patient list">
       <div class="label">Active patients</div>
       <div class="value">--</div>
       <div class="sub">Under your care</div>
     </div>
-    <div class="stat s-week">
+    <div class="stat s-week actionable" id="newSessionSummaryShortcut" role="button" tabindex="0" aria-label="Show patients with new sessions">
       <div class="label">Completed this week</div>
       <div class="value">--</div>
-      <div class="sub">Sessions ready to review</div>
+      <div class="sub">Patients with new sessions</div>
     </div>
     <div class="stat s-flag actionable" id="reviewSummaryShortcut" role="button" tabindex="0" aria-label="Show patients needing review">
       <div class="label">Flagged for review</div>
@@ -674,7 +674,7 @@ function renderDashboardSummary() {
   }
   const stats = document.querySelectorAll('.summary .stat');
   if (stats[0]) stats[0].querySelector('.value').textContent = ML.patients.length;
-  if (stats[1]) stats[1].querySelector('.value').textContent = ML.completedThisWeek();
+  if (stats[1]) stats[1].querySelector('.value').textContent = ML.patients.filter(patient => ML.patientClinicalSummary(patient.id).newSession).length;
   if (stats[2]) stats[2].querySelector('.value').textContent = ML.patients.filter(patient => ML.patientClinicalSummary(patient.id).needsReview).length;
 }
 
@@ -790,6 +790,26 @@ function setupPatientFilters() {
       setDashboardPatientFilter('review', true);
     });
   }
+  const newSessionShortcut = document.getElementById('newSessionSummaryShortcut');
+  if (newSessionShortcut) {
+    newSessionShortcut.addEventListener('click', () => setDashboardPatientFilter('new-session', true));
+    newSessionShortcut.addEventListener('keydown', event => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      setDashboardPatientFilter('new-session', true);
+    });
+  }
+  const activePatientsShortcut = document.getElementById('activePatientsShortcut');
+  if (activePatientsShortcut) {
+    activePatientsShortcut.addEventListener('click', () => {
+      window.location.href = 'patients.html';
+    });
+    activePatientsShortcut.addEventListener('keydown', event => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      window.location.href = 'patients.html';
+    });
+  }
 }
 
 function setDashboardPatientFilter(filter, focusPatients = false) {
@@ -829,14 +849,15 @@ function renderUpcomingSessions() {
     const patientId = event.patientId || event.pid;
     const patient = patientId ? ML.getPatient(patientId) : null;
     const isDeadline = event.type === 'home_deadline' || event.type === 'session';
+    const isPersonal = event.type === 'personal_event';
     const statusClass = event.status === 'scheduled' || event.status === 'due' ? 'confirmed' : 'pending';
     const statusLabel = isDeadline
       ? (event.status === 'due' ? 'Due today' : 'At-home deadline')
-      : (event.purpose || 'In-person appointment');
+      : (isPersonal ? 'Personal / clinic block' : (event.purpose || 'In-person appointment'));
     const title = patient ? patient.name : (event.title || 'Clinic appointment');
     const detail = isDeadline
       ? 'At-home deadline due'
-      : 'In-person appointment' + (patient ? ' · ' + patient.name : '');
+      : (isPersonal ? 'Personal calendar item' : 'In-person appointment' + (patient ? ' · ' + patient.name : ''));
     const href = patient ? UI.scheduleUrl(patient) : UI.scheduleUrl();
 
     return `

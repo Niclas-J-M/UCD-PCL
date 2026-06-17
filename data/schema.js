@@ -1,5 +1,5 @@
 window.MemoryLabSchema = (() => {
-  const TODAY = new Date(2026, 4, 18);
+  const TODAY = new Date(2026, 5, 17);
 
   const education = [
     { code: 0, label: 'Elementary', fullLabel: 'Elementary (Basisonderwijs)', offset: 0.000 },
@@ -76,6 +76,18 @@ window.MemoryLabSchema = (() => {
     };
   }
 
+  function personalEvent(data) {
+    return {
+      type: 'personal_event',
+      patientId: null,
+      status: 'scheduled',
+      title: 'Clinic block',
+      ...data,
+      date: dateFrom(data.date),
+      patientId: null,
+    };
+  }
+
   function question(data) {
     return { ...data };
   }
@@ -92,6 +104,7 @@ window.MemoryLabSchema = (() => {
     sessionSeries,
     homeDeadline,
     clinicAppointment,
+    personalEvent,
     question,
     consultationNote,
     dateFrom,

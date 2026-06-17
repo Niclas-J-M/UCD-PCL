@@ -235,7 +235,13 @@ window.MemoryLabData = (() => {
   }
 
   function completedThisWeek() {
-    return events.filter(event => event.type === 'home_deadline' && event.status === 'completed' && event.date.getMonth() === 4 && event.date.getDate() >= 11 && event.date.getDate() <= 17).length;
+    const start = new Date(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate());
+    const day = start.getDay();
+    const mondayOffset = day === 0 ? -6 : 1 - day;
+    start.setDate(start.getDate() + mondayOffset);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 7);
+    return events.filter(event => event.type === 'home_deadline' && event.status === 'completed' && event.date >= start && event.date < end).length;
   }
 
   function makeHomeDeadline(data) {
@@ -244,6 +250,10 @@ window.MemoryLabData = (() => {
 
   function makeClinicAppointment(data) {
     return schema.clinicAppointment(data);
+  }
+
+  function makePersonalEvent(data) {
+    return schema.personalEvent(data);
   }
 
   return {
@@ -275,5 +285,6 @@ window.MemoryLabData = (() => {
     completedThisWeek,
     makeHomeDeadline,
     makeClinicAppointment,
+    makePersonalEvent,
   };
 })();

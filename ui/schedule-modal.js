@@ -110,6 +110,20 @@
     return event;
   }
 
+  function createPersonalEvent({ targetEvents, ML, title, date, time, endTime, note }) {
+    const event = ML.makePersonalEvent({
+      id: targetEvents.length + 1,
+      title,
+      date,
+      time,
+      endTime,
+      status: 'scheduled',
+      note,
+    });
+    targetEvents.push(event);
+    return event;
+  }
+
   function defaultValues(date = window.MemoryLabData.TODAY, startTime = '10:00') {
     const dateValue = formatDateInput(date);
     return {
@@ -121,6 +135,7 @@
       repeatEndDate: dateValue,
       reminderLeadMinutes: '1440',
       purpose: 'Assessment',
+      title: '',
       note: '',
     };
   }
@@ -134,6 +149,7 @@
     deadlineDates,
     createHomeDeadlines,
     createClinicAppointment,
+    createPersonalEvent,
     defaultValues,
   };
 })();

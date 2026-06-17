@@ -351,6 +351,10 @@ body{font-family:'Segoe UI','Helvetica Neue',system-ui,sans-serif;background:var
           <div class="tt-icon">&#x1F4C5;</div>
           <div class="tt-label">In-person appointment</div>
         </div>
+        <div class="type-tab" id="ttPersonal" onclick="setModalType('personal')">
+          <div class="tt-icon">&#x1F4CC;</div>
+          <div class="tt-label">Personal / clinic block</div>
+        </div>
       </div>
       <div id="sessionFields">
         <div class="form-field">
@@ -415,6 +419,12 @@ body{font-family:'Segoe UI','Helvetica Neue',system-ui,sans-serif;background:var
             <option>Results discussion</option>
             <option>Consultation</option>
           </select>
+        </div>
+      </div>
+      <div id="personalFields" style="display:none;">
+        <div class="form-field">
+          <label>Title</label>
+          <input id="mTitle" type="text" placeholder="e.g. Admin block, lunch, personal appointment">
         </div>
       </div>
       <div class="form-row">
@@ -509,7 +519,7 @@ function eventsForDay(d){ return visibleEvents().filter(e=>sameDay(e.date,d)).so
 function isHomeDeadline(e){ return e.type === 'home_deadline' || e.type === 'session'; }
 function isClinicAppointment(e){ return e.type === 'clinic_appointment' || e.type === 'clinic'; }
 function isPatientVisit(e){ return isClinicAppointment(e) && !!eventPatientId(e); }
-function isPersonalBlock(e){ return isClinicAppointment(e) && !eventPatientId(e); }
+function isPersonalBlock(e){ return e.type === 'personal_event' || (isClinicAppointment(e) && !eventPatientId(e)); }
 function eventPatientId(e){ return e.patientId || e.pid || ''; }
 function eventSortTime(e){ return e.time || '23:59'; }
 function patientOf(e){ return eventPatientId(e) ? ML.getPatient(eventPatientId(e)) : null; }
@@ -527,6 +537,7 @@ function calendarEventLabel(e){
 
 function eventTitle(e){
   const p=patientOf(e);
+  if(isPersonalBlock(e)) return e.title || 'Clinic block';
   if(isClinicAppointment(e)) return e.title || (p ? p.name.split(' ')[0] + ' - appointment' : 'Appointment');
   return p ? p.name.split(' ')[0] + ' deadline' : 'At-home deadline';
 }
@@ -553,6 +564,7 @@ function eventTypeLabel(e){
     if(e.status === 'completed') return 'At-home session completed';
     return e.status === 'overdue' ? 'At-home deadline overdue' : 'At-home deadline';
   }
+  if(isPersonalBlock(e)) return 'Personal / clinic block';
   return e.purpose || 'In-person appointment';
 }
 
@@ -842,11 +854,12 @@ function showPatientEventPanel(e){
 function showClinicEventPanel(e,d){
   const sp=document.getElementById('sidePanel');
   const p=patientOf(e);
+  const detailLabel=isPersonalBlock(e) ? 'Personal / clinic block' : (e.purpose || 'In-person appointment');
   sp.innerHTML=`
     <div class="sp-card">
       <div class="sp-head"><h3>${e.title}</h3><span class="sp-date">${fmtDate(d)}</span></div>
       <div style="padding:16px 18px;">
-        <div style="font-size:13px;color:var(--text-soft);margin-bottom:8px;">&#x1F550; ${formatEventTime(e)} - ${e.purpose || 'In-person appointment'}${p?` - ${p.name}`:''}</div>
+        <div style="font-size:13px;color:var(--text-soft);margin-bottom:8px;">&#x1F550; ${formatEventTime(e)} - ${detailLabel}${p?` - ${p.name}`:''}</div>
         ${e.note?`<div style="font-size:13px;color:var(--text);background:var(--bg);border-radius:8px;padding:12px 14px;border-left:3px solid var(--navy-soft);">${e.note}</div>`:'<div style="font-size:13px;color:var(--text-faint);font-style:italic;">No notes added.</div>'}
       </div>
       <div class="pd-foot"><button class="btn-sm" onclick="resetSidePanel()">&#8592; Back to agenda</button></div>
@@ -1049,6 +1062,7 @@ function openModalWithDate(d,time,patientId){
   document.getElementById('mRepeatEndMode').value=values.repeatEndMode;
   document.getElementById('mRepeatEndDate').value=values.repeatEndDate;
   document.getElementById('mReminder').value=values.reminderLeadMinutes;
+  document.getElementById('mTitle').value=values.title;
   document.getElementById('mNotes').value=values.note;
   updateDeadlineRepeatFields();
   setModalPatient(patientId||'');
@@ -1062,15 +1076,21 @@ function closeModalOutside(e){ if(e.target===document.getElementById('modalOverl
 function setModalType(t){
   modalType=t;
   const isDeadline=t==='deadline';
+  const isAppointment=t==='appointment';
+  const isPersonal=t==='personal';
   document.getElementById('ttSession').className='type-tab'+(isDeadline?' active':'');
-  document.getElementById('ttAppt').className='type-tab'+(!isDeadline?' active':'');
-  document.getElementById('sessionFields').style.display='';
+  document.getElementById('ttAppt').className='type-tab'+(isAppointment?' active':'');
+  document.getElementById('ttPersonal').className='type-tab'+(isPersonal?' active':'');
+  document.getElementById('sessionFields').style.display=isPersonal?'none':'';
   document.getElementById('deadlineFields').style.display=isDeadline?'':'none';
-  document.getElementById('apptFields').style.display=isDeadline?'none':'';
+  document.getElementById('apptFields').style.display=isAppointment?'':'none';
+  document.getElementById('personalFields').style.display=isPersonal?'':'none';
   document.getElementById('startTimeField').style.display=isDeadline?'none':'';
   document.getElementById('endTimeField').style.display=isDeadline?'none':'';
   document.getElementById('mDateLabel').textContent=isDeadline?'Due date':'Date';
-  document.getElementById('mNotes').placeholder=isDeadline?'Optional instructions or reminder notes...':'Appointment notes...';
+  document.getElementById('mNotes').placeholder=isDeadline
+    ? 'Optional instructions or reminder notes...'
+    : (isPersonal ? 'Optional notes for this block...' : 'Appointment notes...');
   updateDeadlineRepeatFields();
 }
 
@@ -1090,8 +1110,8 @@ function saveEvent(){
   if(!dateVal){alert('Please fill in a date.'); return;}
   const newDate=SCHED.parseDateInput(dateVal);
   const patientId=document.getElementById('mPatient').value;
-  if(!patientId){alert('Please select a patient.'); return;}
   if(modalType==='deadline'){
+    if(!patientId){alert('Please select a patient.'); return;}
     const dates=SCHED.deadlineDates({
       startDate:newDate,
       repeat:document.getElementById('mRepeat').value,
@@ -1111,7 +1131,15 @@ function saveEvent(){
     feedbackText = dates.length === 1
       ? `At-home session scheduled for ${UI.formatShortDate(dates[0])}.`
       : `${dates.length} at-home sessions scheduled from ${UI.formatShortDate(dates[0])}.`;
+  } else if(modalType==='personal') {
+    if(!timeVal){alert('Please fill in a start time.'); return;}
+    if(!endTimeVal){alert('Please fill in an end time.'); return;}
+    const title=document.getElementById('mTitle').value.trim();
+    if(!title){alert('Please enter a title for this event.'); return;}
+    SCHED.createPersonalEvent({targetEvents:EVENTS,ML,title,date:newDate,time:timeVal,endTime:endTimeVal,note:document.getElementById('mNotes').value});
+    feedbackText = `${title} scheduled for ${UI.formatShortDate(newDate)}.`;
   } else {
+    if(!patientId){alert('Please select a patient.'); return;}
     if(!timeVal){alert('Please fill in a start time.'); return;}
     const purpose=document.getElementById('mPurpose').value;
     SCHED.createClinicAppointment({targetEvents:EVENTS,ML,patientId,date:newDate,time:timeVal,endTime:endTimeVal,purpose,note:document.getElementById('mNotes').value});

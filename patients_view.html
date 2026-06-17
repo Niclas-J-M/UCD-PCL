@@ -10,8 +10,8 @@
   :root {
     --navy:#1A2340; --navy-soft:#2B3658; --bg:#EEF1F5; --card:#FFFFFF;
     --border:#E4E7EC; --text:#283044; --text-soft:#5D6475; --text-faint:#8D95A6;
-    --blue:#4A6FA5; --blue-deep:#2F5F9E; --usual:#DCE5F0; --very-good:#DDEDE9;
-    --concern:#F6E4E1; --watch:#C77B30; --shadow-lg:0 10px 40px rgba(26,35,64,.10);
+    --blue:#4A6FA5; --blue-deep:#2F5F9E; --usual:#DCE5F0; --watch:#C77B30;
+    --shadow-lg:0 10px 40px rgba(26,35,64,.10);
   }
   *{margin:0;padding:0;box-sizing:border-box;}
   body{font-family:'Segoe UI','Helvetica Neue',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased;}
@@ -89,7 +89,7 @@
     <header class="sheet-head">
       <div class="logo-mini"><div class="mk"><img src="image/logo_memorylab_mark.png" alt="" aria-hidden="true"></div> MemoryLab</div>
       <h1 id="pageTitle">Memory check-in summary</h1>
-      <div class="subtitle" id="pageSubtitle">SGMA score compared with people of a similar age and education level.</div>
+      <div class="subtitle" id="pageSubtitle">SGMA score shown alongside the usual range for people of a similar age and education level.</div>
     </header>
 
     <div class="sheet-body">
@@ -211,12 +211,13 @@ function drawChart() {
   ctx.fillStyle = '#FBFCFD';
   ctx.fillRect(0, 0, width, height);
 
-  ctx.fillStyle = '#DDEDE9';
-  ctx.fillRect(pad.left, pad.top, plotW, Math.max(0, highY - pad.top));
-  ctx.fillStyle = '#DCE5F0';
+  ctx.fillStyle = '#F7F9FC';
+  ctx.fillRect(pad.left, pad.top, plotW, plotH);
+  ctx.fillStyle = 'rgba(220, 229, 240, 0.72)';
   ctx.fillRect(pad.left, highY, plotW, Math.max(0, lowY - highY));
-  ctx.fillStyle = '#F6E4E1';
-  ctx.fillRect(pad.left, lowY, plotW, Math.max(0, pad.top + plotH - lowY));
+  ctx.strokeStyle = '#B9C7D8';
+  ctx.lineWidth = 1.5 * ratio;
+  ctx.strokeRect(pad.left, highY, plotW, Math.max(0, lowY - highY));
 
   ctx.strokeStyle = '#E1E6ED';
   ctx.lineWidth = 1 * ratio;
@@ -231,9 +232,7 @@ function drawChart() {
   ctx.fillStyle = '#5D6475';
   ctx.font = `700 ${12 * ratio}px Segoe UI, sans-serif`;
   ctx.textAlign = 'left';
-  ctx.fillText('Very good', pad.left + 10 * ratio, pad.top + 18 * ratio);
   ctx.fillText('Usual range', pad.left + 10 * ratio, highY + Math.max(18 * ratio, (lowY - highY) / 2));
-  ctx.fillText('Concerning', pad.left + 10 * ratio, pad.top + plotH - 12 * ratio);
 
   ctx.fillStyle = '#8D95A6';
   ctx.font = `${12 * ratio}px Segoe UI, sans-serif`;
@@ -299,7 +298,7 @@ function renderPage() {
   const latest = sessions[sessions.length - 1] || ALL_SESSIONS[ALL_SESSIONS.length - 1];
   const hiddenCount = ALL_SESSIONS.filter(session => session.quality === 'caution').length;
   document.getElementById('pageTitle').textContent = PATIENT.name.split(' ')[0] + "'s memory check-in summary";
-  document.getElementById('pageSubtitle').textContent = 'SGMA score compared with people of a similar age and education level.';
+  document.getElementById('pageSubtitle').textContent = 'SGMA score shown alongside the usual range for people of a similar age and education level.';
   document.getElementById('agePill').textContent = 'Age ' + PATIENT.age;
   document.getElementById('eduPill').textContent = EDUCATION.label;
   document.getElementById('sessionPill').textContent = sessions.length + ' check-ins shown';
